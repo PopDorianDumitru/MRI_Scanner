@@ -141,5 +141,3 @@ class Preprocessor:
                     counter += 1
 
         print(f"Copied {counter} images to {output_folder}")
-
-Preprocessor.flatten_image_directory("processed_pacients_central", "flattened_pacient")
