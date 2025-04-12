@@ -252,7 +252,7 @@ def _sync(names):
     deltas = torch.stack(deltas)
 
     # Sum deltas across ranks.
-    if _sync_device is not None:
+    if _sync_device is not None and torch.distributed.is_initialized():
         torch.distributed.all_reduce(deltas)
 
     # Update cumulative values.
