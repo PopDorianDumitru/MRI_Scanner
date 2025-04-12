@@ -135,7 +135,7 @@ class Generator(nn.Module):
         MainLayers += [GeneratorStage(WidthPerStage[x], WidthPerStage[x + 1], CardinalityPerStage[x + 1], BlocksPerStage[x + 1], ExpansionFactor, KernelSize, VarianceScalingParameter, ResamplingFilter) for x in range(len(WidthPerStage) - 1)]
         
         self.MainLayers = nn.ModuleList(MainLayers)
-        self.AggregationLayer = Convolution(WidthPerStage[-1], 3, KernelSize=1)
+        self.AggregationLayer = Convolution(WidthPerStage[-1], 1, KernelSize=1)
         
         if ConditionDimension is not None:
             self.EmbeddingLayer = MSRInitializer(nn.Linear(ConditionDimension, ConditionEmbeddingDimension, bias=False))

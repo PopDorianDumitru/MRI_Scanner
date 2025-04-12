@@ -13,7 +13,6 @@ import time
 import json
 import torch
 import dnnlib
-
 from . import metric_utils
 from . import frechet_inception_distance
 from . import kernel_inception_distance

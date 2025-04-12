@@ -29,13 +29,20 @@ import urllib
 import urllib.request
 import uuid
 
-from distutils.util import strtobool
 from typing import Any, List, Tuple, Union
 
 
 # Util classes
 # ------------------------------------------------------------------------------------------
 
+def strtobool(val):
+    val = val.lower()
+    if val in ('y', 'yes', 't', 'true', 'on', '1'):
+        return True
+    elif val in ('n', 'no', 'f', 'false', 'off', '0'):
+        return False
+    else:
+        raise ValueError(f"Invalid truth value: {val}")
 
 class EasyDict(dict):
     """Convenience class that behaves like a dict but allows access with the attribute syntax."""
