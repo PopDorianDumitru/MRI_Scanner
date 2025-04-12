@@ -268,9 +268,9 @@ def main(**kwargs):
         c.beta2_scheduler = { 'base_value': 0.9, 'final_value': 0.99, 'total_nimg': decay_nimg }
 
     if opts.preset == 'MRI-128':
-        WidthPerStage = [3 * x // 4 for x in [1024, 1024, 1024, 512, 256]]
-        BlocksPerStage = [2 * x for x in [1, 1, 1, 1, 1]]
-        CardinalityPerStage = [3 * x for x in [32, 32, 32, 16, 8]]
+        WidthPerStage = [3 * x // 4 for x in [1024, 1024, 1024, 512, 256, 128]]
+        BlocksPerStage = [2 * x for x in [1, 1, 1, 1, 1, 1]]
+        CardinalityPerStage = [3 * x for x in [32, 32, 32, 16, 8, 4]]
         FP16Stages = [-1, -2, -3]
         NoiseDimension = 64
 
