@@ -270,7 +270,7 @@ def main(**kwargs):
     if opts.preset == 'MRI-128':
         WidthPerStage = [128, 64, 32, 16, 16, 8]
         BlocksPerStage = [x for x in [2, 1, 1, 1, 1, 1]]
-        CardinalityPerStage = [x for x in [32, 16, 8, 8, 4, 4]]
+        CardinalityPerStage = [x for x in [32, 16, 8, 8, 4, 8]]
         FP16Stages = [-1, -2]
         NoiseDimension = 64
 
