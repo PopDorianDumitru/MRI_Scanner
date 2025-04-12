@@ -136,7 +136,8 @@ class Generator(nn.Module):
         
         self.MainLayers = nn.ModuleList(MainLayers)
         self.AggregationLayer = Convolution(WidthPerStage[-1], 1, KernelSize=1)
-        
+        print("Aggregation Layer initialized with 1 output channel")
+
         if ConditionDimension is not None:
             self.EmbeddingLayer = MSRInitializer(nn.Linear(ConditionDimension, ConditionEmbeddingDimension, bias=False))
         
