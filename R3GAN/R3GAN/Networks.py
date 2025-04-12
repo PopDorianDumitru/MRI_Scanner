@@ -156,7 +156,7 @@ class Discriminator(nn.Module):
         MainLayers = [DiscriminatorStage(WidthPerStage[x], WidthPerStage[x + 1], CardinalityPerStage[x], BlocksPerStage[x], ExpansionFactor, KernelSize, VarianceScalingParameter, ResamplingFilter) for x in range(len(WidthPerStage) - 1)]
         MainLayers += [DiscriminatorStage(WidthPerStage[-1], 1 if ConditionDimension is None else ConditionEmbeddingDimension, CardinalityPerStage[-1], BlocksPerStage[-1], ExpansionFactor, KernelSize, VarianceScalingParameter)]
         
-        self.ExtractionLayer = Convolution(3, WidthPerStage[0], KernelSize=1)
+        self.ExtractionLayer = Convolution(1, WidthPerStage[0], KernelSize=1)
         self.MainLayers = nn.ModuleList(MainLayers)
         
         if ConditionDimension is not None:
