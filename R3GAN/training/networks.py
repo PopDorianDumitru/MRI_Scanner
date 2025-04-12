@@ -24,6 +24,7 @@ class Generator(nn.Module):
             self.Model.MainLayers[x].DataType = torch.bfloat16
         
     def forward(self, x, c):
+        assert x.shape[1] == 1, f"Discriminator expected 1-channel input, but got shape {x.shape}"
         return self.Model(x, c)
     
 class Discriminator(nn.Module):
@@ -44,4 +45,5 @@ class Discriminator(nn.Module):
             self.Model.MainLayers[x].DataType = torch.bfloat16
         
     def forward(self, x, c):
+        assert x.shape[1] == 1, f"Discriminator expected 1-channel input, but got shape {x.shape}"
         return self.Model(x, c)
