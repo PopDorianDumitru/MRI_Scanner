@@ -292,8 +292,10 @@ def training_loop(
                 phase.end_event.record(torch.cuda.current_stream(device))
         
     while True:
+        print(f"[DEBUG] Starting training iteration at nimg={cur_nimg}")
         # Fetch training data.
         with torch.autograd.profiler.record_function('data_fetch'):
+            print("[DEBUG] Finished data fetch.")
             D_img, D_img_c = next(training_set_iterator)
             D_z = torch.randn([batch_size, G.z_dim], device=device)
             
@@ -325,17 +327,22 @@ def training_loop(
         
         # Execute training phases.
         for phase, phase_gen_z, phase_real_img, phase_real_c in zip(phases, all_gen_z, all_real_img, all_real_c):
+            print(f"[DEBUG] Starting phase: {phase.name}")
+
             if phase.start_event is not None:
                 if torch.cuda.is_available():
                     phase.start_event.record(torch.cuda.current_stream(device))
 
             # Accumulate gradients.
+            print(f"[DEBUG] Accumulating gradients for phase {phase.name}...")
+
             phase.opt.zero_grad(set_to_none=True)
             phase.module.requires_grad_(True)
             for real_img, real_c, gen_z in zip(phase_real_img, phase_real_c, phase_gen_z):
                 loss.accumulate_gradients(phase=phase.name, real_img=real_img, real_c=real_c, gen_z=gen_z, gamma=cur_gamma, gain=num_gpus * phase.batch_gpu / batch_size)
             phase.module.requires_grad_(False)
-        
+            print(f"[DEBUG] Done gradient accumulation.")
+
             # Update weights.  
             for g in phase.opt.param_groups:
                 g['lr'] = cur_lr
@@ -352,6 +359,7 @@ def training_loop(
                     for param, grad in zip(params, grads):
                         param.grad = grad.reshape(param.shape)
                 phase.opt.step()
+                print(f"[DEBUG] Finished optimizer step for phase {phase.name}")
 
             # Phase done.
             if phase.end_event is not None:
@@ -365,6 +373,7 @@ def training_loop(
                 p_ema.copy_(p.lerp(p_ema, ema_beta))
             for b_ema, b in zip(G_ema.buffers(), G.buffers()):
                 b_ema.copy_(b)
+        print("[DEBUG] Updated G_ema.")
 
         # Update state.
         cur_nimg += batch_size
@@ -375,6 +384,7 @@ def training_loop(
         if (not done) and (cur_tick != 0) and (cur_nimg < tick_start_nimg + kimg_per_tick * 1000):
             continue
 
+        print("[DEBUG] Starting to accumulate information")
         # Print status line, accumulating the same information in training_stats.
         tick_end_time = time.time()
         fields = []
@@ -396,6 +406,9 @@ def training_loop(
         training_stats.report0('Progress/gamma', cur_gamma)
         training_stats.report0('Timing/total_hours', (tick_end_time - start_time) / (60 * 60))
         training_stats.report0('Timing/total_days', (tick_end_time - start_time) / (24 * 60 * 60))
+
+        print(f"[DEBUG] Tick {cur_tick} completed at kimg={cur_nimg / 1000:.1f}")
+
         if rank == 0:
             print(' '.join(fields))
 
@@ -410,6 +423,7 @@ def training_loop(
         if (rank == 0) and (image_snapshot_ticks is not None) and (done or cur_tick % image_snapshot_ticks == 0):
             images = torch.cat([G_ema(z, c).cpu() for z, c in zip(grid_z, grid_c)]).to(torch.float).numpy()
             save_image_grid(images, os.path.join(run_dir, f'fakes{cur_nimg//1000:09d}.png'), drange=[-1,1], grid_size=grid_size)
+        print("[DEBUG] Done saving image snapshot")
 
         # Save network snapshot.
         snapshot_pkl = None
@@ -431,7 +445,7 @@ def training_loop(
             if rank == 0:
                 with open(snapshot_pkl, 'wb') as f:
                     pickle.dump(snapshot_data, f)
-
+        print("[DEBUG] Done saving network snapshot")
         # Evaluate metrics.
         if (snapshot_data is not None) and (len(metrics) > 0):
             if rank == 0:
@@ -443,7 +457,7 @@ def training_loop(
                     metric_main.report_metric(result_dict, run_dir=run_dir, snapshot_pkl=snapshot_pkl)
                 stats_metrics.update(result_dict.results)
         del snapshot_data # conserve memory
-
+        print("[DEBUG] Done evaluating metrics")
         # Collect statistics.
         for phase in phases:
             value = []
@@ -453,7 +467,7 @@ def training_loop(
             training_stats.report0('Timing/' + phase.name, value)
         stats_collector.update()
         stats_dict = stats_collector.as_dict()
-
+        print("[DEBUG] Done collecting statistics")
         # Update logs.
         timestamp = time.time()
         if stats_jsonl is not None:
@@ -470,12 +484,13 @@ def training_loop(
             stats_tfevents.flush()
         if progress_fn is not None:
             progress_fn(cur_nimg // 1000, total_kimg)
-
+        print("[DEBUG] Done updating logs")
         # Update state.
         cur_tick += 1
         tick_start_nimg = cur_nimg
         tick_start_time = time.time()
         maintenance_time = tick_start_time - tick_end_time
+        print("[DEBUG] Done updating state")
         if done:
             break
 
