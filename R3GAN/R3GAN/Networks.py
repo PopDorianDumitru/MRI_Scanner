@@ -16,7 +16,9 @@ def MSRInitializer(Layer, ActivationGain=1):
 class Convolution(nn.Module):
     def __init__(self, InputChannels, OutputChannels, KernelSize, Groups=1, ActivationGain=1):
         super(Convolution, self).__init__()
-        
+        print("Convolution initialized with ", InputChannels, " input channels")
+        print("Convolution initialized with ", OutputChannels, " output channels")
+
         self.Layer = MSRInitializer(nn.Conv2d(InputChannels, OutputChannels, kernel_size=KernelSize, stride=1, padding=(KernelSize - 1) // 2, groups=Groups, bias=False), ActivationGain=ActivationGain)
         
     def forward(self, x):
@@ -25,7 +27,8 @@ class Convolution(nn.Module):
 class ResidualBlock(nn.Module):
     def __init__(self, InputChannels, Cardinality, ExpansionFactor, KernelSize, VarianceScalingParameter):
         super(ResidualBlock, self).__init__()
-        
+        print("Residual block initialized with ", InputChannels, " input channels")
+
         NumberOfLinearLayers = 3
         ExpandedChannels = InputChannels * ExpansionFactor
         ActivationGain = BiasedActivation.Gain * VarianceScalingParameter ** (-1 / (2 * NumberOfLinearLayers - 2))
@@ -47,7 +50,7 @@ class ResidualBlock(nn.Module):
 class UpsampleLayer(nn.Module):
     def __init__(self, InputChannels, OutputChannels, ResamplingFilter):
         super(UpsampleLayer, self).__init__()
-        
+        print("Upsample layer initialized with ", InputChannels, " input channels")
         self.Resampler = InterpolativeUpsampler(ResamplingFilter)
         
         if InputChannels != OutputChannels:
@@ -62,7 +65,8 @@ class UpsampleLayer(nn.Module):
 class DownsampleLayer(nn.Module):
     def __init__(self, InputChannels, OutputChannels, ResamplingFilter):
         super(DownsampleLayer, self).__init__()
-        
+        print("Downsample layer initialized with ", InputChannels, " input channels")
+        print("Downsample layer initialized with ", OutputChannels, " output channels")
         self.Resampler = InterpolativeDownsampler(ResamplingFilter)
         
         if InputChannels != OutputChannels:
@@ -77,7 +81,9 @@ class DownsampleLayer(nn.Module):
 class GenerativeBasis(nn.Module):
     def __init__(self, InputDimension, OutputChannels):
         super(GenerativeBasis, self).__init__()
-        
+        print("Generative Basis initialized with ", InputDimension, " input dimention")
+        print("Generative Basis initialized with ", OutputChannels, " output channels")
+
         self.Basis = nn.Parameter(torch.empty(OutputChannels, 4, 4).normal_(0, 1))
         self.LinearLayer = MSRInitializer(nn.Linear(InputDimension, OutputChannels, bias=False))
         
@@ -87,7 +93,9 @@ class GenerativeBasis(nn.Module):
 class DiscriminativeBasis(nn.Module):
     def __init__(self, InputChannels, OutputDimension):
         super(DiscriminativeBasis, self).__init__()
-        
+        print("Discriminative Basis initialized with ", InputChannels, " input channels")
+        print("Discriminative Basis initialized with ", OutputDimension, " output dimention")
+
         self.Basis = MSRInitializer(nn.Conv2d(InputChannels, InputChannels, kernel_size=4, stride=1, padding=0, groups=InputChannels, bias=False))
         self.LinearLayer = MSRInitializer(nn.Linear(InputChannels, OutputDimension, bias=False))
         
@@ -97,7 +105,9 @@ class DiscriminativeBasis(nn.Module):
 class GeneratorStage(nn.Module):
     def __init__(self, InputChannels, OutputChannels, Cardinality, NumberOfBlocks, ExpansionFactor, KernelSize, VarianceScalingParameter, ResamplingFilter=None, DataType=torch.float32):
         super(GeneratorStage, self).__init__()
-        
+        print("Generator stage initialized with ", InputChannels, " input channels")
+        print("Generator stage initialized with ", OutputChannels, " output channels")
+
         TransitionLayer = GenerativeBasis(InputChannels, OutputChannels) if ResamplingFilter is None else UpsampleLayer(InputChannels, OutputChannels, ResamplingFilter)
         self.Layers = nn.ModuleList([TransitionLayer] + [ResidualBlock(OutputChannels, Cardinality, ExpansionFactor, KernelSize, VarianceScalingParameter) for _ in range(NumberOfBlocks)])
         self.DataType = DataType
@@ -113,7 +123,9 @@ class GeneratorStage(nn.Module):
 class DiscriminatorStage(nn.Module):
     def __init__(self, InputChannels, OutputChannels, Cardinality, NumberOfBlocks, ExpansionFactor, KernelSize, VarianceScalingParameter, ResamplingFilter=None, DataType=torch.float32):
         super(DiscriminatorStage, self).__init__()
-        
+        print("Discriminator stage initialized with ", InputChannels, " input channels")
+        print("Discriminator stage initialized with ", OutputChannels, " output channels")
+
         TransitionLayer = DiscriminativeBasis(InputChannels, OutputChannels) if ResamplingFilter is None else DownsampleLayer(InputChannels, OutputChannels, ResamplingFilter)
         self.Layers = nn.ModuleList([ResidualBlock(InputChannels, Cardinality, ExpansionFactor, KernelSize, VarianceScalingParameter) for _ in range(NumberOfBlocks)] + [TransitionLayer])
         self.DataType = DataType
@@ -158,6 +170,7 @@ class Discriminator(nn.Module):
         MainLayers += [DiscriminatorStage(WidthPerStage[-1], 1 if ConditionDimension is None else ConditionEmbeddingDimension, CardinalityPerStage[-1], BlocksPerStage[-1], ExpansionFactor, KernelSize, VarianceScalingParameter)]
         
         self.ExtractionLayer = Convolution(1, WidthPerStage[0], KernelSize=1)
+        print("Extraction Layer initialized with 1 input channel")
         self.MainLayers = nn.ModuleList(MainLayers)
         
         if ConditionDimension is not None:
