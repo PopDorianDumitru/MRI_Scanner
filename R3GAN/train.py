@@ -271,7 +271,7 @@ def main(**kwargs):
         WidthPerStage = [1024, 1024, 1024, 1024, 1024, 1024]
         BlocksPerStage = [x for x in [2, 2, 2, 2, 2, 2]]
         CardinalityPerStage = [x for x in [64, 64, 64, 64, 64, 64]]
-        FP16Stages = [-1, -2, -3]
+        FP16Stages = [-1, -2, -3, -4]
         NoiseDimension = 64
 
         ema_nimg = 500 * 1000
