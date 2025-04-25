@@ -174,6 +174,7 @@ class Preprocessor:
     def choose_random_sessions(cls, cdr_scores, chosen_samples):
         random_sessions = [None, None, None, None, None]
         for index in range(len(cdr_scores)):
+            print(len(cls.cdr_rating_sessions[cdr_scores[index]]), cdr_scores[index])
             random_sessions[index] = random.sample(cls.cdr_rating_sessions[cdr_scores[index]], chosen_samples[index])
         return random_sessions
 
@@ -224,4 +225,6 @@ class Preprocessor:
                     scans_sessions[index].append((session_id, closest_scan_day))
             index += 1
 
-
+path_to_diagnosis_csv = "C:\\Users\\doria\\Desktop\\Licenta\\Dataset_TAR\\OASIS3_data_files\\UDSb4\\csv\\OASIS3_UDSb4_cdr.csv"
+path_to_mri_scans_folder = "C:\\Users\\doria\\Desktop\\Licenta\\drive-download-20250425T223131Z-001"
+Preprocessor.prepare_dataset(path_to_diagnosis_csv, path_to_mri_scans_folder)
