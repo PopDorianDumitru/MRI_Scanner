@@ -9,7 +9,7 @@ def main(path_to_diagnosis_csv, path_to_mri_scans_folder):
     print(f"MRI scans folder path: {path_to_mri_scans_folder}")
 
     print("Preparing dataset...")
-    Preprocessor.prepare_dataset()
+    Preprocessor.prepare_dataset(path_to_diagnosis_csv, path_to_mri_scans_folder)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Prepare MRI dataset from diagnosis and scan folders.")
