@@ -194,9 +194,10 @@ class Preprocessor:
         return patient_sessions
 
     @classmethod
-    def prepare_dataset(cls):
+    def prepare_dataset(cls, csv_path, scans_path):
         cls.load_patient_data()
-
+        cls.path_to_diagnosis_csv = csv_path
+        cls.path_to_mri_scans_folder = scans_path
         cdr_scores = [0, 0.5, 1, 2, 3]
         chosen_samples = [125, 125, 125, 125, 19]
         scans_sessions = [[], [], [], [], []]
