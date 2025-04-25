@@ -238,11 +238,19 @@ class Preprocessor:
                 split_id = session_id.split("_")
                 patient_id = split_id[0]
                 number_of_days = int(split_id[2][1:])
-                print(patient_id)
                 scan_days = patients_scans.get(patient_id, [])
                 closest_scan_day = min(scan_days, key=lambda x: abs(x - number_of_days))
-                scans_sessions[index].append(patient_id + "_MR_d" + str(closest_scan_day))
 
+                # Check if within 365 days tolerance
+                if abs(closest_scan_day - number_of_days) <= 365:
+                    day_number = ""
+                    if closest_scan_day < 10:
+                        day_number = "000"
+                    elif closest_scan_day < 100:
+                        day_number = "00"
+                    elif closest_scan_day < 1000:
+                        day_number = "0"
+                    scans_sessions[index].append(patient_id + "_MR_d" + day_number + str(closest_scan_day))
             index += 1
 
 # path_to_diagnosis_csv = "C:\\Users\\doria\\Desktop\\Licenta\\Dataset_TAR\\OASIS3_data_files\\UDSb4\\csv\\OASIS3_UDSb4_cdr.csv"
