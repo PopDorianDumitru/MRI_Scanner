@@ -238,10 +238,9 @@ class Preprocessor:
                 split_id = session_id.split("_")
                 patient_id = split_id[0]
                 number_of_days = int(split_id[2][1:])
+                print(patient_id)
                 scan_days = patients_scans.get(patient_id, [])
                 closest_scan_day = min(scan_days, key=lambda x: abs(x - number_of_days))
-
-                # Check if within 365 days tolerance
                 scans_sessions[index].append(patient_id + "_MR_d" + str(closest_scan_day))
 
             index += 1
