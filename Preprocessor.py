@@ -225,4 +225,3 @@ class Preprocessor:
             index += 1
 
 
-Preprocessor.prepare_dataset()
