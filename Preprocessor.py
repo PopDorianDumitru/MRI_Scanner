@@ -242,8 +242,8 @@ class Preprocessor:
                 closest_scan_day = min(scan_days, key=lambda x: abs(x - number_of_days))
 
                 # Check if within 365 days tolerance
-                if abs(closest_scan_day - number_of_days) <= 365:
-                    scans_sessions[index].append(patient_id + "_MR_d" + str(closest_scan_day))
+                scans_sessions[index].append(patient_id + "_MR_d" + str(closest_scan_day))
+
             index += 1
 
 # path_to_diagnosis_csv = "C:\\Users\\doria\\Desktop\\Licenta\\Dataset_TAR\\OASIS3_data_files\\UDSb4\\csv\\OASIS3_UDSb4_cdr.csv"
