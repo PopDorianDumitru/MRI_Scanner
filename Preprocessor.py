@@ -16,6 +16,7 @@ from nibabel.orientations import (
 class Preprocessor:
     path_to_diagnosis_csv = "C:\\Users\\doria\\Desktop\\Licenta\\Dataset_TAR\\OASIS3_data_files\\UDSb4\\csv\\OASIS3_UDSb4_cdr.csv"
     path_to_mri_scans_folder = "C:\\Users\\doria\\Desktop\\Licenta\\drive-download-20250425T223131Z-001"
+    path_to_output_folder = "C:\\Users\\doria\\Desktop\\Licenta\\output"
     patient_ids = []
     session_ids = []
     cdr_rating_sessions = defaultdict(list)
@@ -195,16 +196,32 @@ class Preprocessor:
         return patient_sessions
 
     @classmethod
-    def prepare_dataset(cls, csv_path, scans_path):
-        cls.path_to_diagnosis_csv = csv_path
-        cls.path_to_mri_scans_folder = scans_path
-        cls.load_patient_data()
+    def prepare_folders(cls, cdr_scores):
+        # Make sure output path exists
+        os.makedirs(cls.path_to_output_folder, exist_ok=True)
 
+        for score in cdr_scores:
+            folder_name = f"cdr_{str(score).replace('.', '_')}"  # Replace '.' with '_' for folder names
+            folder_path = os.path.join(cls.path_to_output_folder, folder_name)
+
+            os.makedirs(folder_path, exist_ok=True)  # Create folder if it doesn't exist
+
+        print(f"Prepared folders for CDR scores: {cdr_scores}")
+
+    @classmethod
+    def prepare_dataset(cls, csv_path, scans_path, output_path):
         cdr_scores = [0, 0.5, 1, 2, 3]
         chosen_samples = [125, 125, 125, 125, 19]
         scans_sessions = [[], [], [], [], []]
+
+        cls.path_to_diagnosis_csv = csv_path
+        cls.path_to_mri_scans_folder = scans_path
+        cls.path_to_output_folder = output_path
+
+        cls.load_patient_data()
+        cls.prepare_folders(cdr_scores)
+
         patients_scans = cls.get_patient_ids_to_mri_scan_days()
-        print(patients_scans)
         sessions_by_severity = cls.choose_random_sessions(cdr_scores, chosen_samples)
         cls.match_sessions_to_scans(sessions_by_severity, patients_scans, scans_sessions)
 
@@ -217,7 +234,6 @@ class Preprocessor:
                 split_id = session_id.split("_")
                 patient_id = split_id[0]
                 number_of_days = int(split_id[2][1:])
-                print(patient_id, session_id, number_of_days)
                 scan_days = patients_scans.get(patient_id, [])
                 closest_scan_day = min(scan_days, key=lambda x: abs(x - number_of_days))
 
