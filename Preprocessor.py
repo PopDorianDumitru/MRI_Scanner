@@ -1,8 +1,12 @@
 import os
+import random
+
 import numpy as np
 import nibabel as nib
 from PIL import Image
+from collections import defaultdict
 import shutil
+import pandas as pd
 import xml.etree.ElementTree as ET
 from nibabel.orientations import (
     io_orientation, axcodes2ornt, ornt_transform, apply_orientation, aff2axcodes
@@ -10,6 +14,11 @@ from nibabel.orientations import (
 
 
 class Preprocessor:
+    path_to_diagnosis_csv = "C:\\Users\\doria\\Desktop\\Licenta\\Dataset_TAR\\OASIS3_data_files\\UDSb4\\csv\\OASIS3_UDSb4_cdr.csv"
+    path_to_mri_scans_folder = "C:\\Users\\doria\\Desktop\\Licenta\\drive-download-20250425T223131Z-001"
+    patient_ids = []
+    session_ids = []
+    cdr_rating_sessions = defaultdict(list)
     orientation_map = {
         'SAG': ('L', 'S', 'A'),
         'COR': ('L', 'A', 'S'),
@@ -141,3 +150,78 @@ class Preprocessor:
                     counter += 1
 
         print(f"Copied {counter} images to {output_folder}")
+
+    @classmethod
+    def load_patient_data(self):
+        print(f'Trying to load data from ${self.path_to_diagnosis_csv}')
+        try:
+            df = pd.read_csv(self.path_to_diagnosis_csv)
+            patient_id_column = "OASISID"
+            session_id_column = "OASIS_session_label"
+            cdr_score_column = "CDRTOT"
+            for index, row in df.iterrows():
+                patient_id = row[patient_id_column]
+                session_id = row[session_id_column]
+                cdr_score = row[cdr_score_column]
+                self.patient_ids.append(patient_id)
+                self.session_ids.append(session_id)
+                self.cdr_rating_sessions[cdr_score].append(session_id)
+            print(f'Successfully loaded data from ${self.path_to_diagnosis_csv}')
+        except Exception as e:
+            print(f'Failed to load data from ${self.path_to_diagnosis_csv}: {e}')
+
+    @classmethod
+    def choose_random_sessions(cls, cdr_scores, chosen_samples):
+        random_sessions = [None, None, None, None, None]
+        for index in range(len(cdr_scores)):
+            random_sessions[index] = random.sample(cls.cdr_rating_sessions[cdr_scores[index]], chosen_samples[index])
+        return random_sessions
+
+    @classmethod
+    def get_patient_ids_to_mri_scan_days(cls):
+        patient_sessions = defaultdict(list)
+
+        # List all folders inside the dataset path
+        for folder_name in os.listdir(cls.path_to_mri_scans_folder):
+            folder_path = os.path.join(cls.path_to_mri_scans_folder, folder_name)
+
+            if os.path.isdir(folder_path):
+                # Example folder name: OAS30001_MR_d0129
+                split_name = folder_name.split("_")
+                patient_id = split_name[0]
+                day_number = int(split_name[2][1:])
+                patient_sessions[patient_id].append(day_number)
+        return patient_sessions
+
+    @classmethod
+    def prepare_dataset(cls):
+        cls.load_patient_data()
+
+        cdr_scores = [0, 0.5, 1, 2, 3]
+        chosen_samples = [125, 125, 125, 125, 19]
+        scans_sessions = [[], [], [], [], []]
+        patients_scans = cls.get_patient_ids_to_mri_scan_days()
+        print(patients_scans)
+        sessions_by_severity = cls.choose_random_sessions(cdr_scores, chosen_samples)
+        cls.match_sessions_to_scans(sessions_by_severity, patients_scans, scans_sessions)
+
+    @classmethod
+    def match_sessions_to_scans(cls, session_ids_by_severity, patients_scans, scans_sessions):
+        index = 0
+        for session_ids in session_ids_by_severity:
+            for session_id in session_ids:
+                print(session_id)
+                split_id = session_id.split("_")
+                patient_id = split_id[0]
+                number_of_days = int(split_id[2][1:])
+                print(patient_id, session_id, number_of_days)
+                scan_days = patients_scans.get(patient_id, [])
+                closest_scan_day = min(scan_days, key=lambda x: abs(x - number_of_days))
+
+                # Check if within 365 days tolerance
+                if abs(closest_scan_day - number_of_days) <= 365:
+                    scans_sessions[index].append((session_id, closest_scan_day))
+            index += 1
+
+
+Preprocessor.prepare_dataset()
