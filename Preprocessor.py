@@ -223,6 +223,7 @@ class Preprocessor:
         patients_scans = cls.get_patient_ids_to_mri_scan_days()
         sessions_by_severity = cls.choose_random_sessions(cdr_scores, chosen_samples)
 
+        print(sessions_by_severity[4])
         # Now in scans_sessions you have a list containing the list of scans for each label
         cls.match_sessions_to_scans(sessions_by_severity, patients_scans, scans_sessions)
         print(scans_sessions[4])
