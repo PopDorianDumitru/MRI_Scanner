@@ -175,7 +175,6 @@ class Preprocessor:
     def choose_random_sessions(cls, cdr_scores, chosen_samples):
         random_sessions = [None, None, None, None, None]
         for index in range(len(cdr_scores)):
-            print(len(cls.cdr_rating_sessions[cdr_scores[index]]), cdr_scores[index])
             random_sessions[index] = random.sample(cls.cdr_rating_sessions[cdr_scores[index]], chosen_samples[index])
         return random_sessions
 
@@ -223,14 +222,18 @@ class Preprocessor:
 
         patients_scans = cls.get_patient_ids_to_mri_scan_days()
         sessions_by_severity = cls.choose_random_sessions(cdr_scores, chosen_samples)
+
+        # Now in scans_sessions you have a list containing the list of scans for each label
         cls.match_sessions_to_scans(sessions_by_severity, patients_scans, scans_sessions)
+        print(scans_sessions[4])
+
 
     @classmethod
     def match_sessions_to_scans(cls, session_ids_by_severity, patients_scans, scans_sessions):
         index = 0
         for session_ids in session_ids_by_severity:
             for session_id in session_ids:
-                print(session_id)
+                # Example folder name: OAS30001_MR_d0129
                 split_id = session_id.split("_")
                 patient_id = split_id[0]
                 number_of_days = int(split_id[2][1:])
@@ -239,7 +242,7 @@ class Preprocessor:
 
                 # Check if within 365 days tolerance
                 if abs(closest_scan_day - number_of_days) <= 365:
-                    scans_sessions[index].append((session_id, closest_scan_day))
+                    scans_sessions[index].append(patient_id + "_MR_d" + str(closest_scan_day))
             index += 1
 
 # path_to_diagnosis_csv = "C:\\Users\\doria\\Desktop\\Licenta\\Dataset_TAR\\OASIS3_data_files\\UDSb4\\csv\\OASIS3_UDSb4_cdr.csv"
