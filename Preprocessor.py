@@ -291,11 +291,10 @@ class Preprocessor:
              data = np.transpose(data, (2, 1, 0))
              data = np.flip(data, axis=1)
              new_img = nib.Nifti1Image(data, np.eye(4))
-
-        new_img = nib.Nifti1Image(data, affine)
-
-        # VERY IMPORTANT: canonicalize AFTER rotation
-        new_img = nib.as_closest_canonical(new_img)
+        else:
+            new_img = nib.Nifti1Image(data, affine)
+            # VERY IMPORTANT: canonicalize AFTER rotation
+            new_img = nib.as_closest_canonical(new_img)
 
         slices = cls.extract_center_slices(new_img, num_slices=num_slices)
 
