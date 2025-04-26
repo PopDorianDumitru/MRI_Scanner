@@ -288,7 +288,7 @@ class Preprocessor:
 
         if cls.needs_rotation(json_metadata):
             print(f'{subject_folder} reoriented')
-            data = np.transpose(data, (2, 0, 1))
+            data = np.transpose(data, (2, 1, 0))
             new_img = nib.Nifti1Image(data, np.eye(4))
         else:
             new_img = nib.Nifti1Image(data, affine)
@@ -306,7 +306,7 @@ class Preprocessor:
     @classmethod
     def needs_rotation(cls, json_metadata: dict):
         orientation = json_metadata.get("ImageOrientationPatientDICOM")
-        if orientation == "":
+        if orientation == None:
             return True
 
         return False
