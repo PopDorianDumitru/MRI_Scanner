@@ -6,6 +6,7 @@ import nibabel as nib
 from PIL import Image
 from collections import defaultdict
 import shutil
+from scipy.ndimage import affine_transform
 import pandas as pd
 import xml.etree.ElementTree as ET
 from nibabel.orientations import (
@@ -255,8 +256,7 @@ class Preprocessor:
         if not gz_path:
             raise ValueError(f"No HDR files found in {subject_folder}.")
 
-        orientation = cls.get_scan_orientation(subject_folder)
-        volume = cls.load_and_reorient_to_axial(gz_path, orientation)
+        volume = cls.reorient_to_axial_scipy(gz_path)
         slices = cls.extract_center_slices(volume, num_slices=num_slices)
 
         for idx, mri_slice in enumerate(slices):
@@ -264,6 +264,34 @@ class Preprocessor:
             image_name = f"{subject_folder}_slice_{idx:02d}.png"
             cls.save_image(image, image_name, output_path)
         return len(slices)
+
+    @classmethod
+    def reorient_to_axial_scipy(cls, input_path):
+        print("Trying to reorient image")
+        try:
+            # Load image
+            img = nib.load(input_path)
+            data = img.get_fdata()
+            original_affine = img.affine
+
+            # Get the orientation info
+            current_orientation = nib.orientations.io_orientation(original_affine)
+            target_orientation = nib.orientations.axcodes2ornt(('R', 'A', 'S'))
+
+            # Get the transform between current and target orientation
+            transform = nib.orientations.ornt_transform(current_orientation, target_orientation)
+
+            # Apply the transform to the data
+            reoriented_data = nib.orientations.apply_orientation(data, transform)
+
+            # Update affine accordingly
+            new_affine = original_affine @ nib.orientations.inv_ornt_aff(transform, img.shape)
+
+            # Save the new reoriented image
+            new_img = nib.Nifti1Image(reoriented_data, new_affine)
+            return new_img
+        except Exception as e:
+            print(f'Failed to reorient: {e}')
 
     @classmethod
     def match_sessions_to_scans(cls, session_ids_by_severity, patients_scans, scans_sessions):
