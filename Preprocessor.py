@@ -266,15 +266,10 @@ class Preprocessor:
         if not gz_path:
             raise ValueError(f"No gz files found in {subject_folder}.")
 
-        img = nib.load(gz_path)
-        data = img.get_fdata().squeeze()
-        original_orientation = "SAG"
-        starting_codes = cls.labels_map.get(original_orientation)
-        starting_orientation = axcodes2ornt(aff2axcodes(img.affine), starting_codes)
-        target_orientation = axcodes2ornt(('R', 'A', 'S'))
-        transform = ornt_transform(starting_orientation, target_orientation)
-        reoriented_data = apply_orientation(data, transform)
-        new_img = nib.Nifti1Image(reoriented_data, transform)
+        new_img = nib.as_closest_canonical(nib.load(gz_path))
+
+        orientation = aff2axcodes(new_img.affine)
+        print(f"{subject_folder} orientation: {orientation}")
 
         slices = cls.extract_center_slices(new_img, num_slices=num_slices)
 
