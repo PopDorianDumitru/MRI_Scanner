@@ -43,6 +43,7 @@ class Preprocessor:
     @staticmethod
     def save_image(img, img_name, output_directory):
         os.makedirs(output_directory, exist_ok=True)
+        print(f'Saving image ${img_name} in folder: ${output_directory}')
         img.save(os.path.join(output_directory, img_name))
 
     @staticmethod
@@ -262,12 +263,13 @@ class Preprocessor:
     def process_subject_gz(cls, subject_folder, num_slices=30, output_size=(128, 128), output_path="."):
         gz_path = cls.find_gz_files_per_subject_raw(subject_folder)
         if not gz_path:
-            raise ValueError(f"No HDR files found in {subject_folder}.")
+            raise ValueError(f"No gz files found in {subject_folder}.")
 
         volume = cls.reorient_to_axial_scipy(gz_path)
         slices = cls.extract_center_slices(volume, num_slices=num_slices)
 
         for idx, mri_slice in enumerate(slices):
+
             image = cls.convert_slice_to_image_file(mri_slice, size=output_size)
             image_name = f"{subject_folder}_slice_{idx:02d}.png"
             cls.save_image(image, image_name, output_path)
