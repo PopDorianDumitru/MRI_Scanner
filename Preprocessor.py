@@ -286,11 +286,11 @@ class Preprocessor:
         data = img.get_fdata()
         affine = img.affine  # original affine
 
-        # if cls.needs_rotation(json_metadata):
-        #     # Perform manual rotation
-        #     data = np.transpose(data, (2, 1, 0))
-        #     data = np.flip(data, axis=1)
-        #     new_img = nib.Nifti1Image(data, np.eye(4))
+        if cls.needs_rotation(json_metadata):
+             # Perform manual rotation
+             data = np.transpose(data, (2, 1, 0))
+             data = np.flip(data, axis=1)
+             new_img = nib.Nifti1Image(data, np.eye(4))
 
         new_img = nib.Nifti1Image(data, affine)
 
@@ -307,18 +307,10 @@ class Preprocessor:
 
     @classmethod
     def needs_rotation(cls, json_metadata: dict):
-        manufacturer = json_metadata.get('Manufacturer', '').lower()
-        model = json_metadata.get('ManufacturersModelName', '').lower()
-        converter = json_metadata.get('ConversionSoftware', '').lower()
-        acquisition = json_metadata.get('MRAcquisitionType', '').lower()
+        orientation = json_metadata.get("ImageOrientationPatientDICOM")
+        if orientation == "":
+            return True
 
-        # Old Siemens Vision + dcm2nii
-        if "vision" in model or "dcm2nii" in converter:
-            return True
-        # No acquisition type means suspicious (likely sagittal)
-        if acquisition == "":
-            return True
-        # Otherwise assume correct
         return False
     @classmethod
     def match_sessions_to_scans(cls, session_ids_by_severity, patients_scans, scans_sessions):
