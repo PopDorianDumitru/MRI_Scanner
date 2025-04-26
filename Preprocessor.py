@@ -266,29 +266,30 @@ class Preprocessor:
         if not gz_path:
             raise ValueError(f"No gz files found in {subject_folder}.")
 
+            # Step 1: extract filename without extension
+        filename = os.path.basename(gz_path).replace('.nii.gz', '')
+
+        # Step 2: replace NIFTI with BIDS in path
+        bids_folder = gz_path.replace('/NIFTI/', '/BIDS/').split('/' + filename)[0]
+
+        # Step 3: create the path to the .json file
+        json_path = os.path.join(bids_folder, filename + '.json')
+
+        # Step 4: load JSON metadata
+        if not os.path.exists(json_path):
+            raise ValueError(f"JSON metadata file not found: {json_path}")
+
+        with open(json_path, 'r') as f:
+            json_metadata = json.load(f)
+
         img = nib.load(gz_path)
         data = img.get_fdata()
 
-        # Step 1: Canonical reorientation (to RAS+)
-        img = nib.as_closest_canonical(img)
-        data = img.get_fdata()
-
-        # Step 2: Check which dimension corresponds to left-right movement
-        # (Important to align sagittal to axial)
-        from nibabel.orientations import aff2axcodes
-        codes = aff2axcodes(img.affine)
-        print(f"{subject_folder} orientation after canonicalization: {codes}")
-
-        # Step 3: If original acquisition was sagittal, rotate axes
-        # A rough rule: sagittal usually has slices along X axis (first axis)
-
-        if codes[2] in ('R', 'L'):  # 3rd axis is Left/Right, so still sagittal
-            print(f"Resampling {subject_folder} from sagittal to axial view...")
-            # Permute axes to put axial slices along last axis
-            data = np.transpose(data, (2, 1, 0))  # swap axes
-            data = np.flip(data, axis=1)  # flip to correct anatomical orientation
-            new_affine = np.eye(4)
-            img = nib.Nifti1Image(data, new_affine)
+        if cls.needs_rotation(json_metadata):
+            # Perform manual rotation
+            data = np.transpose(data, (2, 1, 0))
+            data = np.flip(data, axis=1)
+            img = nib.Nifti1Image(data)
 
         slices = cls.extract_center_slices(img, num_slices=num_slices)
 
@@ -297,6 +298,22 @@ class Preprocessor:
             image_name = f"{subject_folder}_slice_{idx:02d}.png"
             cls.save_image(image, image_name, output_path)
         return len(slices)
+
+    @classmethod
+    def needs_rotation(cls, json_metadata: dict):
+        manufacturer = json_metadata.get('Manufacturer', '').lower()
+        model = json_metadata.get('ManufacturersModelName', '').lower()
+        converter = json_metadata.get('ConversionSoftware', '').lower()
+        acquisition = json_metadata.get('MRAcquisitionType', '').lower()
+
+        # Old Siemens Vision + dcm2nii
+        if "vision" in model or "dcm2nii" in converter:
+            return True
+        # No acquisition type means suspicious (likely sagittal)
+        if acquisition == "":
+            return True
+        # Otherwise assume correct
+        return False
     @classmethod
     def match_sessions_to_scans(cls, session_ids_by_severity, patients_scans, scans_sessions):
         index = 0
