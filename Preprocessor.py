@@ -246,7 +246,7 @@ class Preprocessor:
         index = 0
         for scan_sessions in scans_sessions:
             for scan_session in scan_sessions:
-                cls.process_subject_gz(scan_session, nr_of_slices[index], output_path=os.path.join(cls.path_to_output_folder, folders[index]))
+                cls.process_subject_gz(os.path.join(cls.path_to_output_folder, scan_session), nr_of_slices[index], output_path=os.path.join(cls.path_to_output_folder, folders[index]))
             index += 1
 
     @classmethod
