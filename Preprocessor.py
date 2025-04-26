@@ -65,9 +65,8 @@ class Preprocessor:
         if volume.ndim != 3:
             raise ValueError("Input volume must be a 3D array.")
 
-        start, end = cls.find_brain_region_slices(volume)
-        half = (start + end) // 2
         z = volume.shape[2]
+        half = z // 2
         start = half
         end = min(start + num_slices, z)
 
