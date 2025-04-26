@@ -55,13 +55,20 @@ class Preprocessor:
     @staticmethod
     def extract_center_slices(volume, num_slices=30):
         print("Trying to extract center slices")
+
+        # Make sure you are slicing the array, not the Nifti1Image
+        if hasattr(volume, 'get_fdata'):
+            volume = volume.get_fdata()
+
         if volume.ndim != 3:
             raise ValueError("Input volume must be a 3D array.")
+
         z = volume.shape[2]
         center = z // 2
         half = num_slices // 2
         start = max(center - half, 0)
         end = min(center + half, z)
+
         return [volume[:, :, i] for i in range(start, end)]
 
     @staticmethod
