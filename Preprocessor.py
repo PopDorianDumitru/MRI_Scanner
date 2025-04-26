@@ -287,8 +287,8 @@ class Preprocessor:
         affine = img.affine  # original affine
 
         if cls.needs_rotation(json_metadata):
-
-             new_img = nib.Nifti1Image(data, np.eye(4))
+            data = np.transpose(data, (2, 1, 0))
+            new_img = nib.Nifti1Image(data, np.eye(4))
         else:
             new_img = nib.Nifti1Image(data, affine)
             # VERY IMPORTANT: canonicalize AFTER rotation
