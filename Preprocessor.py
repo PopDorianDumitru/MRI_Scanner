@@ -289,7 +289,7 @@ class Preprocessor:
             # Perform manual rotation
             data = np.transpose(data, (2, 1, 0))
             data = np.flip(data, axis=1)
-            img = nib.Nifti1Image(data)
+            img = nib.Nifti1Image(data, np.eye(4))
 
         slices = cls.extract_center_slices(img, num_slices=num_slices)
 
