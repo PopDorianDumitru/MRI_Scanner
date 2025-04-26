@@ -274,7 +274,7 @@ class Preprocessor:
         target_orientation = axcodes2ornt(('R', 'A', 'S'))
         transform = ornt_transform(starting_orientation, target_orientation)
         reoriented_data = apply_orientation(data, transform)
-        new_img = nib.Nifti1Image(reoriented_data)
+        new_img = nib.Nifti1Image(reoriented_data, transform)
 
         slices = cls.extract_center_slices(new_img, num_slices=num_slices)
 
