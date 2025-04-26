@@ -284,12 +284,18 @@ class Preprocessor:
 
         img = nib.load(gz_path)
         data = img.get_fdata()
+        affine = img.affine  # original affine
 
         if cls.needs_rotation(json_metadata):
             # Perform manual rotation
             data = np.transpose(data, (2, 1, 0))
             data = np.flip(data, axis=1)
             img = nib.Nifti1Image(data, np.eye(4))
+
+        new_img = nib.Nifti1Image(data, affine)
+
+        # VERY IMPORTANT: canonicalize AFTER rotation
+        new_img = nib.as_closest_canonical(new_img)
 
         slices = cls.extract_center_slices(img, num_slices=num_slices)
 
