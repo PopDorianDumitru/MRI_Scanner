@@ -266,12 +266,31 @@ class Preprocessor:
         if not gz_path:
             raise ValueError(f"No gz files found in {subject_folder}.")
 
-        new_img = nib.as_closest_canonical(nib.load(gz_path))
+        img = nib.load(gz_path)
+        data = img.get_fdata()
 
-        orientation = aff2axcodes(new_img.affine)
-        print(f"{subject_folder} orientation: {orientation}")
+        # Step 1: Canonical reorientation (to RAS+)
+        img = nib.as_closest_canonical(img)
+        data = img.get_fdata()
 
-        slices = cls.extract_center_slices(new_img, num_slices=num_slices)
+        # Step 2: Check which dimension corresponds to left-right movement
+        # (Important to align sagittal to axial)
+        from nibabel.orientations import aff2axcodes
+        codes = aff2axcodes(img.affine)
+        print(f"{subject_folder} orientation after canonicalization: {codes}")
+
+        # Step 3: If original acquisition was sagittal, rotate axes
+        # A rough rule: sagittal usually has slices along X axis (first axis)
+
+        if codes[2] in ('R', 'L'):  # 3rd axis is Left/Right, so still sagittal
+            print(f"Resampling {subject_folder} from sagittal to axial view...")
+            # Permute axes to put axial slices along last axis
+            data = np.transpose(data, (2, 1, 0))  # swap axes
+            data = np.flip(data, axis=1)  # flip to correct anatomical orientation
+            new_affine = np.eye(4)
+            img = nib.Nifti1Image(data, new_affine)
+
+        slices = cls.extract_center_slices(img, num_slices=num_slices)
 
         for idx, mri_slice in enumerate(slices):
             image = cls.convert_slice_to_image_file(mri_slice, size=output_size)
