@@ -81,6 +81,7 @@ class Preprocessor:
         # Walk through all subfolders and files
         for root, dirs, files in os.walk(subject_folder):
             for file in files:
+                print(file)
                 if file.endswith('.nii.gz'):
                     full_path = os.path.join(root, file)
                     gz_files.append(full_path)
