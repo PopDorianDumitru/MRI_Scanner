@@ -66,9 +66,8 @@ class Preprocessor:
             raise ValueError("Input volume must be a 3D array.")
 
         z = volume.shape[2]
-        half = z // 2
-        start = half
-        end = min(start + num_slices, z)
+        end = z
+        start = end - num_slices
 
         return [volume[:, :, i] for i in range(start, end)]
 
