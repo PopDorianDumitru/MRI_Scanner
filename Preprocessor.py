@@ -289,7 +289,7 @@ class Preprocessor:
         if cls.needs_rotation(json_metadata):
             print(f'{subject_folder} reoriented')
             data = np.transpose(data, (2, 0, 1))
-            data = np.flip(data, axis=0)
+            data = np.flip(data, axis=1)
             new_img = nib.Nifti1Image(data, np.eye(4))
         else:
             new_img = nib.Nifti1Image(data, affine)
