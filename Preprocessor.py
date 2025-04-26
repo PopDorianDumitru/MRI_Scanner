@@ -54,6 +54,7 @@ class Preprocessor:
 
     @staticmethod
     def extract_center_slices(volume, num_slices=30):
+        print("Trying to extract center slices")
         if volume.ndim != 3:
             raise ValueError("Input volume must be a 3D array.")
         z = volume.shape[2]
@@ -289,6 +290,7 @@ class Preprocessor:
 
             # Save the new reoriented image
             new_img = nib.Nifti1Image(reoriented_data, new_affine)
+            print("Image has been reoriented")
             return new_img
         except Exception as e:
             print(f'Failed to reorient: {e}')
