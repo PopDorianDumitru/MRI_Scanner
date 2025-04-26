@@ -281,27 +281,38 @@ class Preprocessor:
             # Load image
             img = nib.load(input_path)
             data = img.get_fdata()
-            original_affine = img.affine
+            affine = img.affine
 
-            # Get the orientation info
-            current_orientation = nib.orientations.io_orientation(original_affine)
-            target_orientation = nib.orientations.axcodes2ornt(('R', 'A', 'S'))
+            # Step 1: Reorient to RAS+
+            current_ornt = io_orientation(affine)
+            target_ornt = axcodes2ornt(('R', 'A', 'S'))
+            transform = ornt_transform(current_ornt, target_ornt)
+            reoriented_data = apply_orientation(data, transform)
+            new_affine = affine @ inv_ornt_aff(transform, img.shape)
 
-            # Get the transform between current and target orientation
-            transform = nib.orientations.ornt_transform(current_orientation, target_orientation)
+            # Step 2: Ensure slices along Z-axis (axial)
+            # After RAS+, check which physical axis corresponds to Superior (S)
 
-            # Apply the transform to the data
-            reoriented_data = nib.orientations.apply_orientation(data, transform)
+            # Get orientation after RAS+ reorientation
+            new_ornt = io_orientation(new_affine)
 
-            # Update affine accordingly
-            new_affine = original_affine @ nib.orientations.inv_ornt_aff(transform, img.shape)
+            # Superior (S) should be along axis 2 (Z axis)
+            # If not, swap axes
+            axes_order = np.argsort([abs(new_affine[0, 2]), abs(new_affine[1, 2]), abs(new_affine[2, 2])])
 
-            # Save the new reoriented image
-            new_img = nib.Nifti1Image(reoriented_data, new_affine)
-            print("Image has been reoriented")
+            reoriented_data = np.transpose(reoriented_data, axes_order)
+            print(f"Reordering axes: {axes_order}")
+
+            # Important: adjust affine after axis swap (optional)
+            # Normally if you slice, affine doesn't matter for GAN training
+
+            new_img = nib.Nifti1Image(reoriented_data, np.eye(4))  # reset affine
+            print("Image has been reoriented and axialized")
             return new_img
+
         except Exception as e:
             print(f'Failed to reorient: {e}')
+            return None
 
     @classmethod
     def match_sessions_to_scans(cls, session_ids_by_severity, patients_scans, scans_sessions):
