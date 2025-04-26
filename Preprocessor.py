@@ -75,6 +75,19 @@ class Preprocessor:
         return sorted(hdr_files)
 
     @staticmethod
+    def find_gz_files_per_subject_raw(subject_folder):
+        gz_files = []
+
+        # Walk through all subfolders and files
+        for root, dirs, files in os.walk(subject_folder):
+            for file in files:
+                if file.endswith('.nii.gz'):
+                    full_path = os.path.join(root, file)
+                    gz_files.append(full_path)
+
+        return gz_files[0]
+
+    @staticmethod
     def get_scan_orientation(subject_folder):
         for file in os.listdir(subject_folder):
             if file.endswith('.xml'):
@@ -198,19 +211,22 @@ class Preprocessor:
     def prepare_folders(cls, cdr_scores):
         # Make sure output path exists
         os.makedirs(cls.path_to_output_folder, exist_ok=True)
-
+        folders = []
         for score in cdr_scores:
             folder_name = f"cdr_{str(score).replace('.', '_')}"  # Replace '.' with '_' for folder names
+            folders.append(folder_name)
             folder_path = os.path.join(cls.path_to_output_folder, folder_name)
 
             os.makedirs(folder_path, exist_ok=True)  # Create folder if it doesn't exist
 
         print(f"Prepared folders for CDR scores: {cdr_scores}")
+        return folders
 
     @classmethod
     def prepare_dataset(cls, csv_path, scans_path, output_path):
         cdr_scores = [0, 0.5, 1, 2, 3]
         chosen_samples = [125, 125, 125, 125, 19]
+        nr_of_slices = [20, 20, 20, 20, 55]
         scans_sessions = [[], [], [], [], []]
 
         cls.path_to_diagnosis_csv = csv_path
@@ -218,7 +234,7 @@ class Preprocessor:
         cls.path_to_output_folder = output_path
 
         cls.load_patient_data()
-        cls.prepare_folders(cdr_scores)
+        folders = cls.prepare_folders(cdr_scores)
 
         patients_scans = cls.get_patient_ids_to_mri_scan_days()
         sessions_by_severity = cls.choose_random_sessions(cdr_scores, chosen_samples)
@@ -226,8 +242,27 @@ class Preprocessor:
         print(sessions_by_severity[4])
         # Now in scans_sessions you have a list containing the list of scans for each label
         cls.match_sessions_to_scans(sessions_by_severity, patients_scans, scans_sessions)
-        print(scans_sessions[4])
+        index = 0
+        for scan_sessions in scans_sessions:
+            for scan_session in scan_sessions:
+                cls.process_subject_gz(scan_session, nr_of_slices[index], output_path=os.path.join(cls.path_to_output_folder, folders[index]))
+            index += 1
 
+    @classmethod
+    def process_subject_gz(cls, subject_folder, num_slices=30, output_size=(128, 128), output_path="."):
+        gz_path = cls.find_gz_files_per_subject_raw(subject_folder)
+        if not gz_path:
+            raise ValueError(f"No HDR files found in {subject_folder}.")
+
+        orientation = cls.get_scan_orientation(subject_folder)
+        volume = cls.load_and_reorient_to_axial(gz_path, orientation)
+        slices = cls.extract_center_slices(volume, num_slices=num_slices)
+
+        for idx, mri_slice in enumerate(slices):
+            image = cls.convert_slice_to_image_file(mri_slice, size=output_size)
+            image_name = f"{subject_folder}_slice_{idx:02d}.png"
+            cls.save_image(image, image_name, output_path)
+        return len(slices)
 
     @classmethod
     def match_sessions_to_scans(cls, session_ids_by_severity, patients_scans, scans_sessions):
