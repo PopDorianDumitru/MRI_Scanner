@@ -68,8 +68,8 @@ class Preprocessor:
         z = volume.shape[2]
         center = z // 2
         half = num_slices // 2
-        start = max(center - half, 0)
-        end = min(center + half, z)
+        start = center
+        end = min(center + num_slices, z)
 
         return [volume[:, :, i] for i in range(start, end)]
 
