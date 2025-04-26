@@ -267,17 +267,15 @@ class Preprocessor:
             raise ValueError(f"No gz files found in {subject_folder}.")
 
         img = nib.load(gz_path)
-        current_ornt = io_orientation(img.affine)
-        print("Current orientation:", current_ornt)
-        target_ornt = axcodes2ornt(('R', 'A', 'S'))
-        transform = ornt_transform(current_ornt, target_ornt)
-        data = img.get_fdata()
-
-        # Apply the orientation transformation to the data
+        data = img.get_fdata().squeeze()
+        original_orientation = "SAG"
+        starting_codes = cls.labels_map.get(original_orientation)
+        starting_orientation = axcodes2ornt(aff2axcodes(img.affine), starting_codes)
+        target_orientation = axcodes2ornt(('R', 'A', 'S'))
+        transform = ornt_transform(starting_orientation, target_orientation)
         reoriented_data = apply_orientation(data, transform)
+        new_img = nib.Nifti1Image(reoriented_data)
 
-        # Create a new NIfTI image with the reoriented data
-        new_img = nib.Nifti1Image(reoriented_data, np.eye(4))  # Using identity matrix for affine
         slices = cls.extract_center_slices(new_img, num_slices=num_slices)
 
         for idx, mri_slice in enumerate(slices):
