@@ -54,8 +54,8 @@ class Preprocessor:
         img = img.resize(size)
         return img
 
-    @staticmethod
-    def extract_center_slices(volume, num_slices=30):
+    @classmethod
+    def extract_center_slices(cls, volume, num_slices=30):
         print("Trying to extract center slices")
 
         # Make sure you are slicing the array, not the Nifti1Image
@@ -65,11 +65,9 @@ class Preprocessor:
         if volume.ndim != 3:
             raise ValueError("Input volume must be a 3D array.")
 
+        start, end = cls.find_brain_region_slices(volume)
         z = volume.shape[2]
-        center = z // 2
-        half = num_slices // 2
-        start = center
-        end = min(center + num_slices, z)
+        end = min(start + num_slices, z)
 
         return [volume[:, :, i] for i in range(start, end)]
 
@@ -333,6 +331,35 @@ class Preprocessor:
                     day_number = "0"
                 scans_sessions[index].append(patient_id + "_MR_d" + day_number + str(closest_scan_day))
             index += 1
+
+    @classmethod
+    def find_brain_region_slices(cls, data, threshold_ratio=0.1, margin=5):
+        """
+        Detect brain-containing slices along Z-axis based on intensity.
+
+        Args:
+            data: 3D MRI data (X, Y, Z).
+            threshold_ratio: fraction of max intensity to consider as brain.
+            margin: number of slices to expand at each end (to avoid cutting off useful brain).
+
+        Returns:
+            start_slice, end_slice: indices of brain region.
+        """
+        # Move along Z-axis
+        slice_sums = np.array([
+            np.sum(slice_ > (threshold_ratio * np.max(data)))
+            for slice_ in data.transpose(2, 0, 1)
+        ])
+
+        brain_slices = np.where(slice_sums > 0)[0]
+
+        if len(brain_slices) == 0:
+            raise ValueError("No brain detected! Maybe threshold too high or corrupted scan.")
+
+        start = max(brain_slices[0] - margin, 0)
+        end = min(brain_slices[-1] + margin, data.shape[2])
+
+        return start, end
 
 # path_to_diagnosis_csv = "C:\\Users\\doria\\Desktop\\Licenta\\Dataset_TAR\\OASIS3_data_files\\UDSb4\\csv\\OASIS3_UDSb4_cdr.csv"
 # path_to_mri_scans_folder = "C:\\Users\\doria\\Desktop\\Licenta\\drive-download-20250425T223131Z-001"
