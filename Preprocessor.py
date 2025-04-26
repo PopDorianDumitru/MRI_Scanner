@@ -256,12 +256,12 @@ class Preprocessor:
         index = 0
         for scan_sessions in scans_sessions:
             for scan_session in scan_sessions:
-                cls.process_subject_gz(os.path.join(cls.path_to_mri_scans_folder, scan_session), nr_of_slices[index], output_path=os.path.join(cls.path_to_output_folder, folders[index]))
+                cls.process_subject_gz(scan_session, nr_of_slices[index], output_path=os.path.join(cls.path_to_output_folder, folders[index]))
             index += 1
 
     @classmethod
     def process_subject_gz(cls, subject_folder, num_slices=30, output_size=(128, 128), output_path="."):
-        gz_path = cls.find_gz_files_per_subject_raw(subject_folder)
+        gz_path = cls.find_gz_files_per_subject_raw(os.path.join(cls.path_to_mri_scans_folder, subject_folder))
         if not gz_path:
             raise ValueError(f"No gz files found in {subject_folder}.")
 
@@ -269,7 +269,6 @@ class Preprocessor:
         slices = cls.extract_center_slices(volume, num_slices=num_slices)
 
         for idx, mri_slice in enumerate(slices):
-
             image = cls.convert_slice_to_image_file(mri_slice, size=output_size)
             image_name = f"{subject_folder}_slice_{idx:02d}.png"
             cls.save_image(image, image_name, output_path)
