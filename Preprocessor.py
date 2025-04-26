@@ -276,7 +276,7 @@ class Preprocessor:
 
         # Step 4: load JSON metadata
         if not os.path.exists(json_path):
-            raise ValueError(f"JSON metadata file not found: {json_path}")
+            return
 
         with open(json_path, 'r') as f:
             json_metadata = json.load(f)
