@@ -1,3 +1,4 @@
+import json
 import os
 import random
 
@@ -262,10 +263,11 @@ class Preprocessor:
     @classmethod
     def process_subject_gz(cls, subject_folder, num_slices=30, output_size=(128, 128), output_path="."):
         gz_path = cls.find_gz_files_per_subject_raw(os.path.join(cls.path_to_mri_scans_folder, subject_folder))
+        orientation_matrix = cls.get_orientation_matrix(os.path.join(cls.path_to_mri_scans_folder, subject_folder))
         if not gz_path:
             raise ValueError(f"No gz files found in {subject_folder}.")
 
-        volume = cls.reorient_to_axial_scipy(gz_path)
+        volume = cls.reorient_volume_to_axial(gz_path, orientation_matrix)
         slices = cls.extract_center_slices(volume, num_slices=num_slices)
 
         for idx, mri_slice in enumerate(slices):
@@ -275,44 +277,67 @@ class Preprocessor:
         return len(slices)
 
     @classmethod
-    def reorient_to_axial_scipy(cls, input_path):
-        print("Trying to reorient image")
+    def compute_rotation_to_axial(cls, orientation_matrix):
+        # We want to map the current orientation matrix to identity
+        return np.linalg.inv(orientation_matrix)
+
+    @classmethod
+    def reorient_volume_to_axial(cls, gz_path, orientation_matrix, save_path=None):
         try:
-            # Load image
-            img = nib.load(input_path)
+            # Step 1: Load the MRI
+            img = nib.load(gz_path)
             data = img.get_fdata()
-            affine = img.affine
 
-            # Step 1: Reorient to RAS+
-            current_ornt = io_orientation(affine)
-            target_ornt = axcodes2ornt(('R', 'A', 'S'))
-            transform = ornt_transform(current_ornt, target_ornt)
-            reoriented_data = apply_orientation(data, transform)
-            new_affine = affine @ inv_ornt_aff(transform, img.shape)
+            # Step 2: Compute the rotation needed
+            rotation_matrix = cls.compute_rotation_to_axial(orientation_matrix)
 
-            # Step 2: Ensure slices along Z-axis (axial)
-            # After RAS+, check which physical axis corresponds to Superior (S)
+            # Step 3: Apply rotation
+            reoriented_data = affine_transform(
+                data,
+                rotation_matrix,
+                order=1  # Linear interpolation (good for MRIs)
+            )
 
-            # Get orientation after RAS+ reorientation
-            new_ornt = io_orientation(new_affine)
+            # Step 4: Save the reoriented volume
+            new_img = nib.Nifti1Image(reoriented_data, np.eye(4))  # Reset affine
+            if save_path:
+                nib.save(new_img, save_path)
+                print(f"Saved axial reoriented image to {save_path}")
 
-            # Superior (S) should be along axis 2 (Z axis)
-            # If not, swap axes
-            axes_order = np.argsort([abs(new_affine[0, 2]), abs(new_affine[1, 2]), abs(new_affine[2, 2])])
-
-            reoriented_data = np.transpose(reoriented_data, axes_order)
-            print(f"Reordering axes: {axes_order}")
-
-            # Important: adjust affine after axis swap (optional)
-            # Normally if you slice, affine doesn't matter for GAN training
-
-            new_img = nib.Nifti1Image(reoriented_data, np.eye(4))  # reset affine
-            print("Image has been reoriented and axialized")
             return new_img
 
         except Exception as e:
-            print(f'Failed to reorient: {e}')
+            print(f"Failed to reorient volume: {e}")
             return None
+    @classmethod
+    def get_orientation_matrix(cls, folder_path):
+        # Look for a .json file inside the folder
+        json_file = None
+        for root, dirs, files in os.walk(folder_path):
+            for file in files:
+                if file.endswith('.json'):
+                    json_file = os.path.join(root, file)
+                    break
+        if json_file is None:
+            raise FileNotFoundError(f"No .json file found in {folder_path}")
+
+        # Load the JSON metadata
+        with open(json_file, 'r') as f:
+            metadata = json.load(f)
+
+        # Extract the ImageOrientationPatientDICOM
+        if "ImageOrientationPatientDICOM" not in metadata:
+            raise KeyError(f"'ImageOrientationPatientDICOM' field not found in {json_file}")
+
+        image_orientation = metadata["ImageOrientationPatientDICOM"]
+
+        # Build the 3x3 orientation matrix
+        row = np.array(image_orientation[:3])
+        col = np.array(image_orientation[3:])
+        normal = np.cross(row, col)
+
+        orientation_matrix = np.stack([row, col, normal], axis=1)
+        return orientation_matrix
 
     @classmethod
     def match_sessions_to_scans(cls, session_ids_by_severity, patients_scans, scans_sessions):
