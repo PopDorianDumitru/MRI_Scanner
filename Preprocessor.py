@@ -77,7 +77,7 @@ class Preprocessor:
     @staticmethod
     def find_gz_files_per_subject_raw(subject_folder):
         gz_files = []
-
+        print(subject_folder)
         # Walk through all subfolders and files
         for root, dirs, files in os.walk(subject_folder):
             for file in files:
