@@ -10,7 +10,7 @@ from scipy.ndimage import affine_transform
 import pandas as pd
 import xml.etree.ElementTree as ET
 from nibabel.orientations import (
-    io_orientation, axcodes2ornt, ornt_transform, apply_orientation, aff2axcodes
+    io_orientation, axcodes2ornt, ornt_transform, apply_orientation, aff2axcodes, inv_ornt_aff
 )
 
 
