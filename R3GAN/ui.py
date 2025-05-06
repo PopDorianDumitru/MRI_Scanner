@@ -48,7 +48,7 @@ def main(model_path):
     gr.TabbedInterface(
         interface_list=[classification_interface, generation_interface],
         tab_names=["Classify MRI", "Generate MRI"]
-    ).launch()
+    ).launch(share=True)
 
 
 if __name__ == "__main__":
