@@ -34,6 +34,8 @@ def main(model_path):
         outputs=gr.Label(label="Predicted Dementia Severity"),
         title="MRI Dementia Severity Classifier"
     )
+    gallery_output = gr.Gallery(label="Generated MRI Scans", type="pil")
+    gallery_output.scale = 0
 
     generation_interface = gr.Interface(
         fn=generate_mri,
@@ -41,7 +43,7 @@ def main(model_path):
             gr.Dropdown(choices=severity_levels, label="Select Dementia Severity"),
             gr.Slider(minimum=1, maximum=5, step=1, value=1, label="Number of Images to Generate")
         ],
-        outputs=gr.Gallery(label="Generated MRI Scans", type="pil"),
+        outputs=gallery_output,
         title="Generate MRI Based on Severity"
     )
 
