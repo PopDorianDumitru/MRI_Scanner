@@ -75,5 +75,5 @@ def classify_image(discriminator, image: Image.Image) -> str:
     # Stack logits and find the index with the highest score
     logits = torch.cat(logits_list, dim=0)  # [num_classes, 1]
     pred = torch.argmax(logits).item()
-
+    print(logits_list)
     return index_to_label.get(pred, "Unknown")
