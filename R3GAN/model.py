@@ -45,8 +45,9 @@ def generate_image(generator, severity: str, z_dim=512):
 
 
 def classify_image(discriminator, image: Image.Image) -> str:
-
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # Convert to grayscale if it's RGB
+    if image.mode != 'L':
+        image = image.convert('L')  # 'L' = grayscale
 
     # Convert PIL to tensor and normalize
     img_tensor = torch.tensor(np.array(image), dtype=torch.float32, device=device)
