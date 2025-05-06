@@ -45,17 +45,34 @@ def generate_image(generator, severity: str, z_dim=512):
 
 
 def classify_image(discriminator, image: Image.Image) -> str:
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Convert PIL to tensor and normalize
     img_tensor = torch.tensor(np.array(image), dtype=torch.float32, device=device)
 
-    if img_tensor.ndim == 2:
-        img_tensor = img_tensor.unsqueeze(0)
-    elif img_tensor.ndim == 3 and img_tensor.shape[2] == 3:
-        img_tensor = img_tensor.permute(2, 0, 1)
+    # Ensure shape is [1, 1, H, W]
+    if img_tensor.ndim == 2:  # [H, W]
+        img_tensor = img_tensor.unsqueeze(0).unsqueeze(0)
+    elif img_tensor.ndim == 3 and img_tensor.shape[2] == 1:  # [H, W, 1]
+        img_tensor = img_tensor.permute(2, 0, 1).unsqueeze(0)
+    else:
+        raise ValueError(f"Unexpected image shape: {img_tensor.shape}")
 
-    img_tensor = img_tensor.unsqueeze(0) / 127.5 - 1
+    img_tensor = img_tensor / 127.5 - 1  # Normalize to [-1, 1]
+
+    num_classes = discriminator.c_dim
+    logits_list = []
 
     with torch.no_grad():
-        logits = discriminator(img_tensor)
+        for class_idx in range(num_classes):
+            c = torch.zeros([1, num_classes], device=device)
+            c[0, class_idx] = 1  # one-hot
+            logit = discriminator(img_tensor, c)
+            logits_list.append(logit)
 
-    pred = torch.argmax(logits, dim=1).item()
+    # Stack logits and find the index with the highest score
+    logits = torch.cat(logits_list, dim=0)  # [num_classes, 1]
+    pred = torch.argmax(logits).item()
+
     return index_to_label.get(pred, "Unknown")
