@@ -45,12 +45,25 @@ def generate_images_ui(
     images = []
 
     for seed_idx, seed in enumerate(seeds):
-        print(f'Generating image for seed {seed} ({seed_idx+1}/{len(seeds)})...')
+        print(f"Generating image for seed {seed} ({seed_idx + 1}/{len(seeds)})...")
+
+        # Generate latent z
         z = torch.from_numpy(np.random.RandomState(seed).randn(1, G.z_dim)).to(device)
+
         with torch.no_grad():
-            img = G(z, label)
-        img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
-        img_pil = PIL.Image.fromarray(img[0].cpu().numpy(), 'RGB')
+            img = G(z, label)  # img shape: [1, 1, H, W] for grayscale
+
+        # Scale to [0, 255] and convert to uint8
+        img = (img * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+
+        # Convert to numpy array and squeeze channel dimension
+        img_np = img[0].cpu().numpy()  # shape: [1, H, W]
+        if img_np.shape[0] == 1:
+            img_np = img_np[0]  # shape: [H, W]
+        else:
+            raise ValueError(f"Expected 1-channel grayscale image, got shape: {img_np.shape}")
+
+        img_pil = PIL.Image.fromarray(img_np, mode='L')
         images.append(img_pil)
 
     return images
