@@ -62,7 +62,7 @@ def classify_image(discriminator, image: Image.Image) -> str:
 
     img_tensor = img_tensor / 127.5 - 1  # Normalize to [-1, 1]
 
-    num_classes = discriminator.c_dim
+    num_classes = 5
     logits_list = []
 
     with torch.no_grad():
