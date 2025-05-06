@@ -20,8 +20,42 @@ import torch
 
 import legacy
 
-#----------------------------------------------------------------------------
 
+def generate_images_ui(
+    network_pkl: str,
+    seeds: List[int],
+    class_idx: Optional[int]
+) -> List[PIL.Image.Image]:
+    print(f'Loading networks from "{network_pkl}"...')
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    with dnnlib.util.open_url(network_pkl) as f:
+        G = legacy.load_network_pkl(f)['G_ema'].to(device)
+
+    # Create label tensor
+    label = torch.zeros([1, G.c_dim], device=device)
+    if G.c_dim != 0:
+        if class_idx is None:
+            raise ValueError('Must specify class label for conditional generation')
+        label[:, class_idx] = 1
+    else:
+        if class_idx is not None:
+            print('Warning: class label ignored for unconditional network')
+
+    images = []
+
+    for seed_idx, seed in enumerate(seeds):
+        print(f'Generating image for seed {seed} ({seed_idx+1}/{len(seeds)})...')
+        z = torch.from_numpy(np.random.RandomState(seed).randn(1, G.z_dim)).to(device)
+        with torch.no_grad():
+            img = G(z, label)
+        img = (img.permute(0, 2, 3, 1) * 127.5 + 128).clamp(0, 255).to(torch.uint8)
+        img_pil = PIL.Image.fromarray(img[0].cpu().numpy(), 'RGB')
+        images.append(img_pil)
+
+    return images
+
+#----------------------------------------------------------------------------
 def parse_range(s: Union[str, List]) -> List[int]:
     '''Parse a comma separated list of numbers or ranges and return a list of ints.
 
