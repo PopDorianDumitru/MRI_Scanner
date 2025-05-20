@@ -99,8 +99,10 @@ class Dataset(torch.utils.data.Dataset):
         if isinstance(label, (int, np.integer)):
             onehot = np.zeros(self.label_shape, dtype=np.float32)
             onehot[label] = 1
+            print(f"Onehot Label: {onehot}")
             return onehot
         else:
+            print(f"Label: {label}")
             return label.astype(np.float32).copy()
 
     def get_details(self, idx):
