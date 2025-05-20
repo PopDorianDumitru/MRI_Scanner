@@ -96,11 +96,12 @@ class Dataset(torch.utils.data.Dataset):
 
     def get_label(self, idx):
         label = self._get_raw_labels()[self._raw_idx[idx]]
-        if label.dtype == np.int64:
+        if isinstance(label, (int, np.integer)):
             onehot = np.zeros(self.label_shape, dtype=np.float32)
             onehot[label] = 1
-            label = onehot
-        return label.copy()
+            return onehot
+        else:
+            return label.astype(np.float32).copy()
 
     def get_details(self, idx):
         d = dnnlib.EasyDict()
