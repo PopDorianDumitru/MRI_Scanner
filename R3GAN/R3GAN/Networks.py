@@ -154,8 +154,6 @@ class Generator(nn.Module):
             self.EmbeddingLayer = MSRInitializer(nn.Linear(ConditionDimension, ConditionEmbeddingDimension, bias=False))
         
     def forward(self, x, y=None):
-        print(f"Shape of y before EmbeddingLayer: {y.shape}")
-        print(f"Content of y before EmbeddingLayer: {y}")
         x = torch.cat([x, self.EmbeddingLayer(y)], dim=1) if hasattr(self, 'EmbeddingLayer') else x
         
         for Layer in self.MainLayers:
