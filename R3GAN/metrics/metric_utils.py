@@ -263,9 +263,9 @@ def compute_feature_stats_for_generator(opts, detector_url, detector_kwargs, rel
 
     # Setup generator and labels.
     G = copy.deepcopy(opts.G).eval().requires_grad_(False).to(opts.device)
-    print(f"Generator label dimension: {G.c_dim}")
+    print(f"Generator label dimension: {G.c_dim}", flush=True)
     c_iter = iterate_random_labels(opts=opts, batch_size=batch_gen)
-    print(f"Cond iter {c_iter}")
+    print(f"Cond iter {c_iter}", flush=True)
     # Initialize.
     stats = FeatureStats(**stats_kwargs)
     assert stats.max_items is not None
