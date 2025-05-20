@@ -17,6 +17,8 @@ import uuid
 import numpy as np
 import torch
 import dnnlib
+from torch.utils.data import DataLoader, Subset
+
 
 #----------------------------------------------------------------------------
 
@@ -228,7 +230,16 @@ def compute_feature_stats_for_dataset(opts, detector_url, detector_kwargs, rel_l
 
     # Main loop.
     item_subset = [(i * opts.num_gpus + opts.rank) % num_items for i in range((num_items - 1) // opts.num_gpus + 1)]
-    for images, _labels in torch.utils.data.DataLoader(dataset=dataset, sampler=item_subset, batch_size=batch_size, **data_loader_kwargs):
+
+    subset = Subset(dataset, item_subset)
+
+    loader = DataLoader(
+        subset,
+        batch_size=batch_size,
+        **data_loader_kwargs
+    )
+
+    for images, _labels in loader:
         if images.shape[1] == 1:
             images = images.repeat([1, 3, 1, 1])
         features = detector(images.to(opts.device), **detector_kwargs)
