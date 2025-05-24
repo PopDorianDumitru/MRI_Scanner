@@ -68,4 +68,4 @@ if __name__ == "__main__":
     parser.add_argument('--generator_path', type=str, required=True, help="Path to the .pkl GAN model file")
     parser.add_argument('--classifier_path', type=str, required=True, help="Path to the custom classifier file")
     args = parser.parse_args()
-    main(args.model_path, args.classifier_path)
+    main(args.generator_path, args.classifier_path)
