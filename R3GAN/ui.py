@@ -7,6 +7,8 @@ import argparse
 import torch
 import pickle
 from MRI2DCNN import MRI2DCNN
+from torchvision import transforms
+
 
 def main(model_path, classifier_path):
     # Load generator
@@ -41,16 +43,14 @@ def main(model_path, classifier_path):
         return generate_images_ui(model_path, seeds, class_idx)
 
     def classify_mri(image: Image.Image) -> str:
-        # Ensure image is grayscale (1 channel)
-        image = image.convert("L")  # Converts to mode "L" (grayscale)
+        inference_transform = transforms.Compose([
+            transforms.Grayscale(),  # Just to be safe
+            transforms.Resize((128, 128)),  # Optional, if not guaranteed
+            transforms.ToTensor(),  # Converts to [C, H, W] and normalizes to [0,1]
+            transforms.Normalize(mean=[0.5], std=[0.5])  # Match training
+        ])
+        input_tensor = inference_transform(image).unsqueeze(0)  # [1, 1, 128, 128]
 
-        # Convert to numpy array and normalize to [0, 1]
-        image_np = np.array(image).astype(np.float32) / 255.0
-
-        # Add channel and batch dimensions -> shape: [1, 1, 128, 128]
-        input_tensor = torch.tensor(image_np).unsqueeze(0).unsqueeze(0)
-
-        # Pass through classifier
         with torch.no_grad():
             outputs = classifier(input_tensor)
             predicted_idx = outputs.argmax(dim=1).item()
