@@ -1,14 +1,19 @@
 import gradio as gr
 from PIL import Image
-from model import open_model, classify_image
+from model import open_model
 import numpy as np
 from gen_images import generate_images_ui
 import argparse
+import torch
 
 
-def main(model_path):
-    # Load generator and discriminator once
-    generator, discriminator = open_model(model_path)
+def main(model_path, classifier_path):
+    # Load generator
+    generator, _ = open_model(model_path)
+
+    # Load custom classifier
+    classifier = torch.load(classifier_path, map_location=torch.device('cpu'))
+    classifier.eval()
 
     severity_levels = ["Normal", "Mild", "Moderate", "Severe", "Very Severe"]
 
@@ -26,7 +31,11 @@ def main(model_path):
         return generate_images_ui(model_path, seeds, class_idx)
 
     def classify_mri(image: Image.Image) -> str:
-        return classify_image(discriminator, image)
+        input_tensor = torch.unsqueeze(torch.tensor(np.array(image)).float().unsqueeze(0), 0)
+        with torch.no_grad():
+            outputs = classifier(input_tensor)
+            predicted_idx = outputs.argmax(dim=1).item()
+        return severity_levels[predicted_idx]
 
     classification_interface = gr.Interface(
         fn=classify_mri,
@@ -34,6 +43,7 @@ def main(model_path):
         outputs=gr.Label(label="Predicted Dementia Severity"),
         title="MRI Dementia Severity Classifier"
     )
+
     gallery_output = gr.Gallery(label="Generated MRI Scans", type="pil")
     gallery_output.scale = 0
 
@@ -55,6 +65,7 @@ def main(model_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="R3GAN MRI UI")
-    parser.add_argument('--model_path', type=str, required=True, help="Path to the .pkl model file")
+    parser.add_argument('--generator_path', type=str, required=True, help="Path to the .pkl GAN model file")
+    parser.add_argument('--classifier_path', type=str, required=True, help="Path to the custom classifier file")
     args = parser.parse_args()
-    main(args.model_path)
+    main(args.model_path, args.classifier_path)
