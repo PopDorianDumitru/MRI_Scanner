@@ -41,10 +41,20 @@ def main(model_path, classifier_path):
         return generate_images_ui(model_path, seeds, class_idx)
 
     def classify_mri(image: Image.Image) -> str:
-        input_tensor = torch.unsqueeze(torch.tensor(np.array(image)).float().unsqueeze(0), 0)
+        # Ensure image is grayscale (1 channel)
+        image = image.convert("L")  # Converts to mode "L" (grayscale)
+
+        # Convert to numpy array and normalize to [0, 1]
+        image_np = np.array(image).astype(np.float32) / 255.0
+
+        # Add channel and batch dimensions -> shape: [1, 1, 128, 128]
+        input_tensor = torch.tensor(image_np).unsqueeze(0).unsqueeze(0)
+
+        # Pass through classifier
         with torch.no_grad():
             outputs = classifier(input_tensor)
             predicted_idx = outputs.argmax(dim=1).item()
+
         return severity_levels[predicted_idx]
 
     classification_interface = gr.Interface(
