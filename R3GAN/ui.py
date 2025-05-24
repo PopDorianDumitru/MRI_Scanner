@@ -6,14 +6,23 @@ from gen_images import generate_images_ui
 import argparse
 import torch
 import pickle
+from MRI2DCNN import MRI2DCNN
 
 def main(model_path, classifier_path):
     # Load generator
     generator, _ = open_model(model_path)
 
-    # Load custom classifier
+    # Step 1: Load the state_dict
     with open(classifier_path, "rb") as f:
-        classifier = pickle.load(f)
+        state_dict = pickle.load(f)
+
+    # Step 2: Initialize model
+    classifier = MRI2DCNN(num_classes=5)
+
+    # Step 3: Load the weights
+    classifier.load_state_dict(state_dict)
+
+    # Step 4: Set to evaluation mode
     classifier.eval()
 
     severity_levels = ["Normal", "Mild", "Moderate", "Severe", "Very Severe"]
