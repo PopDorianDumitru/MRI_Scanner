@@ -12,7 +12,7 @@ def main(model_path, classifier_path):
     generator, _ = open_model(model_path)
 
     # Load custom classifier
-    classifier = torch.load(classifier_path, map_location=torch.device('cpu'))
+    classifier = torch.load(classifier_path, map_location=torch.device('cpu'), weights_only=False)
     classifier.eval()
 
     severity_levels = ["Normal", "Mild", "Moderate", "Severe", "Very Severe"]
