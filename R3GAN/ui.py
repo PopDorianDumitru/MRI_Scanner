@@ -5,14 +5,15 @@ import numpy as np
 from gen_images import generate_images_ui
 import argparse
 import torch
-
+import pickle
 
 def main(model_path, classifier_path):
     # Load generator
     generator, _ = open_model(model_path)
 
     # Load custom classifier
-    classifier = torch.load(classifier_path, map_location=torch.device('cpu'), weights_only=False)
+    with open(classifier_path, "rb") as f:
+        classifier = pickle.load(f)
     classifier.eval()
 
     severity_levels = ["Normal", "Mild", "Moderate", "Severe", "Very Severe"]
