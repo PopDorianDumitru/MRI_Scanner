@@ -22,4 +22,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    main(args.csv, args.scans, args.output)
+    main(args.csv, args.scans, args.output, args.slice)
