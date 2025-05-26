@@ -55,7 +55,7 @@ class Preprocessor:
         return img
 
     @classmethod
-    def extract_center_slices(cls, volume, num_slices=30):
+    def extract_slices(cls, volume, num_slices=30, slice='Axial'):
         print("Trying to extract center slices")
 
         # Make sure you are slicing the array, not the Nifti1Image
@@ -64,13 +64,24 @@ class Preprocessor:
 
         if volume.ndim != 3:
             raise ValueError("Input volume must be a 3D array.")
-
-        z = volume.shape[2]
+        z = None
+        if slice == "Axial":
+            z = volume.shape[2]
+        elif slice == "Sagittal":
+            z = volume.shape[1]
+        elif slice == "Coronal":
+            z = volume.shape[0]
+        else:
+            raise ValueError("Unacceptable Slicing format, must be Axial, Sagittal or Coronal")
         half = z // 2
         start = half
         end = min(start + num_slices, z)
-
-        return [volume[:, :, i] for i in range(start, end)]
+        if slice == "Axial":
+            return [volume[:, :, i] for i in range(start, end)]
+        if slice == "Sagittal":
+            return [volume[:, i, :] for i in range(start, end)]
+        if slice == "Coronal":
+            return [volume[i, :, :] for i in range(start, end)]
 
     @staticmethod
     def find_hdr_files_per_subject_raw(subject_folder):
@@ -127,14 +138,14 @@ class Preprocessor:
         return reoriented_data
 
     @classmethod
-    def process_subject(cls, subject_folder, num_slices=30, output_size=(128, 128), output_path="."):
+    def process_subject(cls, subject_folder, num_slices=30, output_size=(128, 128), output_path=".", slices="Axial"):
         hdr_paths = cls.find_hdr_files_per_subject_raw(subject_folder)
         if not hdr_paths:
             raise ValueError(f"No HDR files found in {subject_folder}.")
 
         orientation = cls.get_scan_orientation(subject_folder)
         volume = cls.load_and_reorient_to_axial(hdr_paths[0], orientation)
-        slices = cls.extract_center_slices(volume, num_slices=num_slices)
+        slices = cls.extract_slices(volume, num_slices=num_slices, slice=slices)
 
         subject_name = os.path.basename(subject_folder.strip("/"))
         subject_output_dir = os.path.join(output_path, subject_name)
@@ -148,14 +159,14 @@ class Preprocessor:
 
 
     @classmethod
-    def process_all_subjects_in_directory(cls, parent_folder, output_path="processed", num_slices=15, output_size=(128, 128)):
+    def process_all_subjects_in_directory(cls, parent_folder, output_path="processed", num_slices=15, output_size=(128, 128), slices="Axial"):
         os.makedirs(output_path, exist_ok=True)
         for folder_name in os.listdir(parent_folder):
             subject_folder = os.path.join(parent_folder, folder_name)
             if os.path.isdir(subject_folder):
                 try:
                     print(f"Processing: {subject_folder}")
-                    cls.process_subject(subject_folder, num_slices=num_slices, output_size=output_size, output_path=output_path)
+                    cls.process_subject(subject_folder, num_slices=num_slices, output_size=output_size, output_path=output_path, slices=slices)
                 except Exception as e:
                     print(f"Failed to process {subject_folder}: {e}")
 
@@ -295,7 +306,7 @@ class Preprocessor:
             # VERY IMPORTANT: canonicalize AFTER rotation
             new_img = nib.as_closest_canonical(new_img)
 
-        slices = cls.extract_center_slices(new_img, num_slices=num_slices)
+        slices = cls.extract_slices(new_img, num_slices=num_slices)
 
         for idx, mri_slice in enumerate(slices):
             image = cls.convert_slice_to_image_file(mri_slice, size=output_size)
