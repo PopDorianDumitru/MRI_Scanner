@@ -245,7 +245,7 @@ class Preprocessor:
         return folders
 
     @classmethod
-    def prepare_dataset(cls, csv_path, scans_path, output_path):
+    def prepare_dataset(cls, csv_path, scans_path, output_path, slice_type="Axial"):
         cdr_scores = [0, 0.5, 1, 2, 3]
         chosen_samples = [125, 125, 125, 125, 19]
         nr_of_slices = [20, 20, 20, 20, 55]
@@ -267,11 +267,11 @@ class Preprocessor:
         index = 0
         for scan_sessions in scans_sessions:
             for scan_session in scan_sessions:
-                cls.process_subject_gz(scan_session, nr_of_slices[index], output_path=os.path.join(cls.path_to_output_folder, folders[index]))
+                cls.process_subject_gz(scan_session, nr_of_slices[index], output_path=os.path.join(cls.path_to_output_folder, folders[index]), slice=slice_type)
             index += 1
 
     @classmethod
-    def process_subject_gz(cls, subject_folder, num_slices=30, output_size=(128, 128), output_path="."):
+    def process_subject_gz(cls, subject_folder, num_slices=30, output_size=(128, 128), output_path=".", slice_type="Axial"):
         gz_path = cls.find_gz_files_per_subject_raw(os.path.join(cls.path_to_mri_scans_folder, subject_folder))
         if not gz_path:
             raise ValueError(f"No gz files found in {subject_folder}.")
@@ -306,7 +306,7 @@ class Preprocessor:
             # VERY IMPORTANT: canonicalize AFTER rotation
             new_img = nib.as_closest_canonical(new_img)
 
-        slices = cls.extract_slices(new_img, num_slices=num_slices)
+        slices = cls.extract_slices(new_img, num_slices=num_slices, slice=slice_type)
 
         for idx, mri_slice in enumerate(slices):
             image = cls.convert_slice_to_image_file(mri_slice, size=output_size)
