@@ -67,9 +67,9 @@ class Preprocessor:
         z = None
         if slice == "Axial":
             z = volume.shape[2]
-        elif slice == "Sagittal":
-            z = volume.shape[1]
         elif slice == "Coronal":
+            z = volume.shape[1]
+        elif slice == "Sagittal":
             z = volume.shape[0]
         else:
             raise ValueError("Unacceptable Slicing format, must be Axial, Sagittal or Coronal")
@@ -78,9 +78,9 @@ class Preprocessor:
         end = min(start + num_slices, z)
         if slice == "Axial":
             return [volume[:, :, i] for i in range(start, end)]
-        if slice == "Sagittal":
-            return [volume[:, i, :] for i in range(start, end)]
         if slice == "Coronal":
+            return [volume[:, i, :] for i in range(start, end)]
+        if slice == "Sagittal":
             return [volume[i, :, :] for i in range(start, end)]
 
     @staticmethod
