@@ -13,12 +13,12 @@ import re
 from typing import List, Optional, Union
 
 import click
-import dnnlib
+import R3GAN.dnnlib as dnnlib
 import numpy as np
 import PIL.Image
 import torch
 
-import legacy
+import R3GAN.legacy as legacy
 
 
 def generate_images_ui(
@@ -50,9 +50,10 @@ def generate_images_ui(
         # Generate latent z
         z = torch.from_numpy(np.random.RandomState(seed).randn(1, G.z_dim)).to(device)
 
+        print(f"Starting to generate image")
         with torch.no_grad():
             img = G(z, label)  # img shape: [1, 1, H, W] for grayscale
-
+        print(f"Image generated")
         # Scale to [0, 255] and convert to uint8
         img = (img * 127.5 + 128).clamp(0, 255).to(torch.uint8)
 

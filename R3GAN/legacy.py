@@ -14,8 +14,8 @@ import re
 import copy
 import numpy as np
 import torch
-import dnnlib
-from torch_utils import misc
+import R3GAN.dnnlib as dnnlib
+from R3GAN.torch_utils import misc
 
 #----------------------------------------------------------------------------
 
@@ -70,6 +70,8 @@ class _LegacyUnpickler(pickle.Unpickler):
             module = 'training.networks'
         if module[:12] == 'BaselineGAN.':
             module = 'R3GAN.' + module[12:]
+        if module.startswith("R3GAN") or module.startswith("dnnlib") or module.startswith("metrics") or module.startswith("torch_utils") or module.startswith("training"):
+            module = "R3GAN." + module
         return super().find_class(module, name)
 
 #----------------------------------------------------------------------------
@@ -121,7 +123,7 @@ def convert_tf_generator(tf_G):
         return val if val is not None else none
 
     # Convert kwargs.
-    from training import networks_stylegan2
+    from R3GAN.training import networks_stylegan2
     network_class = networks_stylegan2.Generator
     kwargs = dnnlib.EasyDict(
         z_dim               = kwarg('latent_size',          512),
@@ -268,7 +270,7 @@ def convert_tf_discriminator(tf_D):
     #for name, value in tf_params.items(): print(f'{name:<50s}{list(value.shape)}')
 
     # Convert params.
-    from training import networks_stylegan2
+    from R3GAN.training import networks_stylegan2
     D = networks_stylegan2.Discriminator(**kwargs).eval().requires_grad_(False)
     # pylint: disable=unnecessary-lambda
     # pylint: disable=f-string-without-interpolation

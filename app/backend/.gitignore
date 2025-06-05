@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+.ENV/
+
+# Jupyter / IPython
+.ipynb_checkpoints
+
+# Pytest
+.cache/
+.coverage
+htmlcov/
+
+# VSCode / IDEs
+.vscode/
+.idea/
+
+# Environment variables
+.env
+*.env
+
+# Logs
+*.log
+
+# MyPy / Lint / Type checkers
+.mypy_cache/
+.pyre/
+.pytype/
+.dmypy.json
+
+# Uvicorn/Pydantic reload files
+reload.*.json
+
+models/CLASSIFIER_ALPHA.pkl
+models/R3GAN_ALPHA.pkl

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import copy
-import R3GAN.Networks
+
 
 class Generator(nn.Module):
     def __init__(self, *args, **kw):
@@ -15,7 +15,7 @@ class Generator(nn.Module):
         if kw['c_dim'] != 0:
             config['ConditionDimension'] = kw['c_dim']
         
-        self.Model = R3GAN.Networks.Generator(*args, **config)
+        self.Model = Project.Networks.Generator(*args, **config)
         self.z_dim = kw['NoiseDimension']
         self.c_dim = kw['c_dim']
         self.img_resolution = kw['img_resolution']
@@ -38,7 +38,7 @@ class Discriminator(nn.Module):
         if kw['c_dim'] != 0:
             config['ConditionDimension'] = kw['c_dim']
         
-        self.Model = R3GAN.Networks.Discriminator(*args, **config)
+        self.Model = Project.Networks.Discriminator(*args, **config)
         
         for x in kw['FP16Stages']:
             self.Model.MainLayers[x].DataType = torch.bfloat16

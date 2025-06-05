@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy
-from torch_utils.ops import upfirdn2d
+from R3GAN.torch_utils.ops import upfirdn2d
 
 def CreateLowpassKernel(Weights, Inplace):
     Kernel = numpy.array([Weights]) if Inplace else numpy.convolve(Weights, [1, 1]).reshape(1, -1)

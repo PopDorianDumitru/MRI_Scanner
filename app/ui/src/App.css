@@ -1,0 +1,55 @@
+/* src/App.css */
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f3f4f6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-root {
+  width: 100%;
+}
+
+.navbar {
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 0rem 1.5rem 0rem 1.5rem;
+  display: flex;
+  align-items: center;
+  background-color: rgba(52,52,52,1);
+}
+
+.navbar h1 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: white;
+  letter-spacing: 0.1rem;
+}
+
+.nav-links a {
+  margin-left: 1rem;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
+}
+
+.main-content {
+  flex: 1;
+}
+
+.footer {
+  text-align: center;
+  padding: 1.5rem;
+}
+
+.footer p {
+  color: #dc2626;
+  font-size: 1.125rem;
+  font-weight: bold;
+}

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import math
-from torch_utils.ops import bias_act
+from R3GAN.torch_utils.ops import bias_act
 
 class BiasedActivationReference(nn.Module):
     Gain = math.sqrt(2 / (1 + 0.2 ** 2))

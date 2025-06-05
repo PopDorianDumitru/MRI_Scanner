@@ -3,6 +3,7 @@ import torch
 from PIL import Image
 import numpy as np
 
+from R3GAN.legacy import _LegacyUnpickler
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 label_to_index = {
@@ -19,7 +20,7 @@ index_to_label = {v: k for k, v in label_to_index.items()}
 # Load the R3GAN model from a .pkl file
 def open_model(path: str):
     with open(path, 'rb') as f:
-        data = pickle.load(f)
+        data = _LegacyUnpickler(f).load()
 
     # Assume standard format: {'G': generator, 'D': discriminator}
     generator = data['G'].to(device).eval()
