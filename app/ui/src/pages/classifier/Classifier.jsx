@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import './Classifier.css';
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
 function Classifier() {
   const [fileName, setFileName] = useState('Click to upload .nii.gz');
   const [pov, _] = useState('Axial');
@@ -12,7 +14,7 @@ function Classifier() {
     formData.append('file', file);
     formData.append('orientation', orientation);
 
-    const response = await fetch('http://localhost:8000/classify', {
+    const response = await fetch(`${apiUrl}/classify`, {
         method: 'POST',
         body: formData,
     });

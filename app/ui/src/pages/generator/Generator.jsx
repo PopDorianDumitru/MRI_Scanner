@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import './Generator.css';
 
+const apiUrl = import.meta.env.VITE_API_URL;
+
+
 function Generator() {
   const [count, setCount] = useState(1);
   const [type, setType] = useState('Normal');
@@ -11,7 +14,7 @@ function Generator() {
     formData.append('label', type);
     formData.append('count', count);
     try {
-        const res = await fetch('http://localhost:8000/generate', {
+        const res = await fetch(`${apiUrl}/generate`, {
         method: 'POST',
         body: formData,
         });
@@ -65,7 +68,7 @@ function Generator() {
               <option value="Mild Dementia">Mild Dementia</option>
               <option value="Moderate Dementia">Moderate Dementia</option>
               <option value="Severe Dementia">Severe Dementia</option>
-              <option value="Very-Severe Dementia">Very Severe Dementia</option>
+              <option value="Very Severe Dementia">Very Severe Dementia</option>
             </select>
           </div>
 

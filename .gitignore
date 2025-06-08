@@ -1,1 +1,8 @@
 .idea/
+*/.env
+.env
+venv
+__pycache__
+pyvenv.cfg
+.gradio
+.pytest_cache

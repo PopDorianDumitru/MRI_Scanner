@@ -1,0 +1,12 @@
+numpy
+fastapi
+uvicorn
+nibabel
+python-dotenv
+pillow
+ninja
+scipy
+pandas
+python-multipart
+pytest
+httpx
