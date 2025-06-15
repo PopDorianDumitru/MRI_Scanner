@@ -17,8 +17,8 @@ import io
 
 label_map = {
     0: "Normal",
-    1: "Slight Dementia",
-    2: "Mild Dementia",
+    1: "Mild Dementia",
+    2: "Moderate Dementia",
     3: "Severe Dementia",
     4: "Very Severe Dementia"
 }
@@ -89,3 +89,29 @@ def classify_mri(file, orientation: Literal["Axial", "Coronal", "Sagittal"]) -> 
             "label": label_map.get(predicted_idx, "Unknown"),
             "image": base64_img
         }
+
+def classify_image(file) -> dict:
+    try:
+        # Load and preprocess image using your defined transform
+        image = Image.open(file.file).convert("RGB")
+        input_tensor = inference_transform(image).unsqueeze(0)  # [1, 1, 128, 128]
+
+        # Create base64 image from the preprocessed (grayscale, resized) image
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        base64_img = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+        # Run inference
+        with torch.no_grad():
+            outputs = classifier(input_tensor)
+            predicted_idx = outputs.argmax(dim=1).item()
+
+        return {
+            "label": label_map.get(predicted_idx, "Unknown"),
+            "image": base64_img
+        }
+
+    except Exception as e:
+        raise ValueError(f"Image classification failed: {e}")
+
+

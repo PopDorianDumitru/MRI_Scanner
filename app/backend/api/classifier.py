@@ -11,7 +11,7 @@ import torch
 from R3GAN.MRI2DCNN import MRI2DCNN
 from torchvision import transforms
 from config import CLASSIFIER_MODEL_PATH
-from services.classifier_service import classify_mri
+from services.classifier_service import classify_mri, classify_image
 
 router = APIRouter()
 classifier_path = CLASSIFIER_MODEL_PATH
@@ -44,3 +44,17 @@ async def classify_route(
         return JSONResponse(prediction)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Processing failed: {e}")
+    
+@router.post("/image")
+async def classify_image_route(
+    file: UploadFile = File(...)
+):
+    # Basic image format check
+    if not file.filename.lower().endswith((".png", ".jpg", ".jpeg")):
+        raise HTTPException(status_code=400, detail="Invalid file format. Must be .png or .jpg")
+
+    try:
+        prediction = classify_image(file)
+        return JSONResponse(prediction)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image processing failed: {e}")

@@ -3,6 +3,7 @@ from unittest import mock
 from fastapi.testclient import TestClient
 from main import app
 from services.generator_service import InvalidLabelError, InvalidCountError
+from PIL import Image
 
 client = TestClient(app)
 

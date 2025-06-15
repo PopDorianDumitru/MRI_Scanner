@@ -3,8 +3,8 @@ import pytest
 import numpy as np
 from unittest import mock
 from types import SimpleNamespace
-from services.classifier_service import classify_mri
-
+from services.classifier_service import classify_mri, classify_image
+from PIL import Image
 
 class DummyFile:
     def __init__(self, filename="test.nii.gz", data=None):
@@ -65,3 +65,34 @@ def test_classify_mri_non_3d_input(mock_nib_load):
 
     with pytest.raises(ValueError, match=error_message):
         classify_mri(dummy_file, orientation="Axial")
+
+@mock.patch("services.classifier_service.classifier")
+def test_classify_image(mock_classifier):
+    # Create a simple grayscale test image
+    image = Image.new("L", (128, 128), color=128)
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    buffer.seek(0)
+
+    # Create a DummyFile-like object for the image
+    file = SimpleNamespace(filename="test.png", file=buffer)
+
+    # Mock classifier output
+    mock_output = mock.Mock()
+    mock_output.argmax.return_value.item.return_value = 1  # Slight Dementia
+    mock_classifier.return_value = mock_output
+
+    result = classify_image(file)
+
+    assert result["label"] == "Slight Dementia"
+    assert isinstance(result["image"], str)
+    assert result["image"].startswith("iVBOR") or len(result["image"]) > 0 
+
+def test_classify_image_invalid_file():
+    bad_file = SimpleNamespace(
+        filename="corrupt.png",
+        file=io.BytesIO(b"This is not an image")
+    )
+
+    with pytest.raises(ValueError, match="Image classification failed:"):
+        classify_image(bad_file)

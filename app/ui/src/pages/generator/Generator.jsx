@@ -17,6 +17,9 @@ function Generator() {
         const res = await fetch(`${apiUrl}/generate`, {
         method: 'POST',
         body: formData,
+        headers: {
+          "ngrok-skip-browser-warning": 1
+        }
         });
 
         if (!res.ok) {

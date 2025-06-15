@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from main import app
 import tempfile
 import os
+from PIL import Image
 
 client = TestClient(app)
 
@@ -79,3 +80,58 @@ def test_classify_route_internal_error(mock_classify_mri):
 
     assert response.status_code == 500
     assert "Processing failed" in response.json()["detail"]
+
+
+@mock.patch("api.classifier.classify_image")
+def test_classify_image_route_success(mock_classify_image):
+    # Create a valid PNG file in memory
+    image_data = io.BytesIO()
+    from PIL import Image
+    img = Image.new("L", (128, 128), color=150)
+    img.save(image_data, format="PNG")
+    image_data.seek(0)
+
+    # Mock classifier output
+    mock_classify_image.return_value = {
+        "label": "Slight Dementia",
+        "image": "base64string=="
+    }
+
+    response = client.post(
+        "/classify/image",
+        files={"file": ("brain.png", image_data, "image/png")}
+    )
+
+    assert response.status_code == 200
+    json_data = response.json()
+    assert "label" in json_data
+    assert "image" in json_data
+    assert json_data["label"] == "Slight Dementia"
+
+
+def test_classify_image_route_invalid_extension():
+    fake_file = io.BytesIO(b"not an image")
+    response = client.post(
+        "/classify/image",
+        files={"file": ("document.txt", fake_file, "text/plain")}
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Invalid file format. Must be .png or .jpg"
+
+
+@mock.patch("api.classifier.classify_image", side_effect=Exception("unexpected failure"))
+def test_classify_image_route_internal_error(mock_classify_image):
+    # Create a valid image file
+    image_data = io.BytesIO()
+    img = Image.new("L", (128, 128), color=150)
+    img.save(image_data, format="JPEG")
+    image_data.seek(0)
+
+    response = client.post(
+        "/classify/image",
+        files={"file": ("fail.jpg", image_data, "image/jpeg")}
+    )
+
+    assert response.status_code == 500
+    assert "Image processing failed" in response.json()["detail"]
